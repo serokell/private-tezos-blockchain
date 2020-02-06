@@ -71,17 +71,17 @@ done
 
 exit_flag="false"
 
-if [[ -z ${tezos_client-} ]]; then
+if [[ -z ${tezos_client:-} ]]; then
     echo "\"--tezos-client\" wasn't provided."
     exit_flag="true"
 fi
 
-if [[ -z ${base_dir-} ]]; then
+if [[ -z ${base_dir:-} ]]; then
     echo "\"--base-dir\" wasn't provided."
     exit_flag="true"
 fi
 
-if [[ -z ${parameters-} ]]; then
+if [[ -z ${parameters:-} ]]; then
     echo "\"--parameters\" wasn't provided."
     exit_flag="true"
 fi

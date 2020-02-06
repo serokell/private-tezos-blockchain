@@ -73,7 +73,7 @@ while true; do
     esac
 done
 
-if [[ -z ${base_dir-} ]]; then
+if [[ -z ${base_dir:-} ]]; then
     echo "\"--base-dir\" wasn't provided."
     exit 1
 fi

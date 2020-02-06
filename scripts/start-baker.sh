@@ -14,7 +14,7 @@ gen_node_identity() {
 
 start_node() {
     node_args=("--data-dir" "$node_dir" "--rpc-addr" "localhost:8732" "--net-addr" "$net_addr" "--no-bootstrap-peers" "--bootstrap-threshold" "1")
-    for peer in "${peers[@]-}"; do
+    for peer in "${peers[@]:-}"; do
         node_args+=("--peer" "$peer")
     done
     ("$tezos_node" run "${node_args[@]}" &>"$base_dir/node.log") &
@@ -124,32 +124,32 @@ fi
 
 exit_flag="false"
 
-if [[ -z ${base_dir-} ]]; then
+if [[ -z ${base_dir:-} ]]; then
     echo "\"--base-dir\" wasn't provided."
     exit_flag="true"
 fi
 
-if [[ -z ${tezos_client-} ]]; then
+if [[ -z ${tezos_client:-} ]]; then
     echo "\"--tezos-client\" wasn't provided."
     exit_flag="true"
 fi
 
-if [[ -z ${tezos_node-} ]]; then
+if [[ -z ${tezos_node:-} ]]; then
     echo "\"--tezos-node\" wasn't provided."
     exit_flag="true"
 fi
 
-if [[ -z ${tezos_baker-} ]]; then
+if [[ -z ${tezos_baker:-} ]]; then
     echo "\"--tezos-baker\" wasn't provided."
     exit_flag="true"
 fi
 
-if [[ -z ${tezos_endorser-} ]]; then
+if [[ -z ${tezos_endorser:-} ]]; then
     echo "\"--tezos-endorser\" wasn't provided."
     exit_flag="true"
 fi
 
-if [[ -z ${net_addr-} ]]; then
+if [[ -z ${net_addr:-} ]]; then
     echo "\"--net-addr\" wasn't provided."
     exit_flag="true"
 fi
