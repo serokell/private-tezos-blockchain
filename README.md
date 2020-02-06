@@ -1,3 +1,9 @@
+<!--
+   - SPDX-FileCopyrightText: 2019 TQ Tezos <https://tqtezos.com/>
+   -
+   - SPDX-License-Identifier: MPL-2.0
+   -->
+
 # Running private blockchain
 
 This doc will describe how to run your own private Tezos blockchain.
