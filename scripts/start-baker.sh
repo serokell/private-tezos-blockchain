@@ -13,7 +13,19 @@ gen_node_identity() {
 }
 
 start_node() {
-    node_args=("--data-dir" "$node_dir" "--rpc-addr" "localhost:8732" "--net-addr" "$net_addr" "--no-bootstrap-peers" "--bootstrap-threshold" "1")
+    case "$base_chain" in
+        babylonnet )
+            network="babylonnet"
+            ;;
+        carthagenet )
+            network="carthagenet"
+            ;;
+        *)
+            echo "$base_chain not supported. Only 'babylonnet' and 'carthagenet' are supported."
+            exit 1
+            ;;
+    esac
+    node_args=("--data-dir" "$node_dir" "--rpc-addr" "localhost:8732" "--net-addr" "$net_addr" "--no-bootstrap-peers" "--bootstrap-threshold" "1" "--network" "$network")
     for peer in "${peers[@]:-}"; do
         node_args+=("--peer" "$peer")
     done
@@ -51,6 +63,8 @@ usage() {
     echo "  --tezos-baker <filepath>. Path for patched tezos-baker executable"
     echo "  --tezos-endorser <filepath>. Path for patched tezos-endorser executable"
     echo "  --net-addr <net-addr>. Define net address of the baker node"
+    echo "  [--base-chain <babylonnet | carthagenet>]. Define base chain for your private"
+    echo "    blockchain. Default is 'carthagenet'."
     echo "  [--peer <net-addr>]. Node peer address. Possible to provide"
     echo "    zero or more peers. Note, that you have to provide at least one peer"
     echo "    for the baker (e.g. use dictator node), otherwise, bakers won't be able"
@@ -66,6 +80,7 @@ fi
 
 stop_flag="false"
 encrypted_flag="false"
+base_chain="carthagenet"
 peers=()
 
 while true; do
@@ -104,6 +119,10 @@ while true; do
         --encrypted)
             encrypted_flag="true"
             shift
+            ;;
+        --base-chain )
+            base_chain="$2"
+            shift 2
             ;;
         stop)
             stop_flag="true"
