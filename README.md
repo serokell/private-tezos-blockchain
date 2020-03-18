@@ -23,6 +23,12 @@ More detailed instructions are presented further.
 
 ## Prerequisites
 
+There are two ways to use these scripts:
+1) Run them as is on your machine.
+2) Run them inside docker container.
+
+### Running scripts outside docker prerequisites
+
 Since running a private blockchain requires compiling patched Tezos binaries from
 scratch, you will have to install the following dependencies:
 ```
@@ -48,10 +54,33 @@ sudo cp opam-2.0.3-x86_64-linux /usr/local/bin/opam
 sudo chmod a+x /usr/local/bin/opam
 ```
 
+### Running scripts inside docker prerequisites
+
+For this, you obviously will need installed docker.
+
+There is [`Dockerfile`](./Dockerfile) that should be used in order to build required docker image
+with all tezos library dependencies.
+Run the following command to do this:
+```sh
+docker build -t ubuntu-tezos .
+```
+
+In order to use this image you will also need docker volume, to create one run the following command:
+```sh
+docker volume create ubuntu-tezos-volume
+```
+
+This docker image has [`./scripts/docker.sh`](./scripts/docker.sh) as an entrypoint.
+This script basically wraps [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
+and [`start-baker.sh`](./scripts/start-baker.sh) scripts providing required paths
+for tezos-binaries stored inside the docker volume.
+
 ## Generating new genesis public key and building patched binaries
 
+### Without docker
+
 First step for running the private blockchain is generating a new genesis public key and
-building patched Tezos binaries. [build-patched-binaries.sh](./scripts/build-patched-binaries.sh)
+building patched Tezos binaries. [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
 shell script will build these patched binaries.
 
 Note that you may have to adjust this script or [`patch_template.patch`](./patches/patch_template.patch)
@@ -84,9 +113,27 @@ To get information about the `genesis` account, run:
 ```
 After running this command, the `user` directory will contain patched Tezos binaries.
 
+### Using docker
+
+To generate patched binaries do the following:
+```
+docker run -v ubuntu-tezos-volume:/base-dir -i \
+  -t ubuntu-tezos build-binaries --base-chain carthagenet
+```
+
+In case someone provided you a genesis public key:
+```
+docker run -v ubuntu-tezos-volume:/base-dir -i -t ubuntu-tezos build-binaries \
+  --genesis-key <provided key> --base-chain carthagenet
+```
+
+This will do roughly the same things as in the previous section but in the docker.
+
 ## Running baker
 
-In order to run baker, you should use the [start-baker.sh](./scripts/start-baker.sh)
+### Without docker
+
+In order to run baker, you should use the [`start-baker.sh`](./scripts/start-baker.sh)
 shell script, for this you will need Tezos binaries from the previous step.
 Let's suppose baker built binaries using `baker` as a `base-dir` with some provided genesis key.
 Also, on this step you need to specify an IP address on which baker can be accessed on the
@@ -122,11 +169,29 @@ tezos-client -d base_dir/client show address baker
 
 We recomend having at least two nodes and bakers in your private chain, but the more the better.
 
+### Using docker
+
+To run baker inside docker container run the following:
+```sh
+# Note that here you should specify the port using which your node can be
+# accessed, thus you also need to expose and publish this port for docker.
+docker run --expose 8733 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
+  -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet \
+  --peer 10.147.19.104:8733
+```
+
+This will do roughly the same things as in the previous section but in the docker.
+
+Port `8732` is used as an node rpc port and exposed by the docker image by default.
+Consider publishing it as well in case you want to interact with this node over RPC.
+
 ## Activating procotol and starting blockchain
+
+### Without docker
 
 After building and running the baker on the dictator machine, the dictator should activate protocol
 and bake the first block. In order to do that, one should use
-[activate-protocol.sh](./scripts/activate-protocol.sh) shell script.
+[`activate-protocol.sh`](./scripts/activate-protocol.sh) shell script.
 It will activate the new protocol and bake the first block, after that the private blockchain will
 actually start.
 
@@ -151,6 +216,22 @@ Now the blockchain is ready to be launched. In order to launch it, the dictator 
 In this parameters, `bootstrap_accounts` has information about account public keys
 which will have some tokens (4M of tez in this example) after the chain start. Note
 that all bakers should have some tokens, thus, they should be listed in `bootstrap_accounts`.
+
+### Using docker
+
+At first, you will need container running the dictator node.
+
+Second step is to copy parameters file to the docker filesystem:
+```sh
+docker cp parameters/parameters_carthagenet.json <container_name>:/parameters.json
+```
+
+And the last step is to run activation script for running docker container:
+```sh
+docker exec <container_name> ./scripts/activate-protocol.sh \
+  --base-dir /base-dir --tezos-client /base-dir/tezos-client \
+  --parameters /parameters.json
+```
 
 ## Using private chain
 

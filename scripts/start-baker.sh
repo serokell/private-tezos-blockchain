@@ -29,8 +29,12 @@ start_node() {
     for peer in "${peers[@]:-}"; do
         node_args+=("--peer" "$peer")
     done
-    ("$tezos_node" run "${node_args[@]}" &>"$base_dir/node.log") &
-    echo "$!" >| "$base_dir/node_pid.txt"
+    if [[ $background_flag == "false" ]]; then
+        "$tezos_node" run "${node_args[@]}"
+    else
+        ("$tezos_node" run "${node_args[@]}" &>"$base_dir/node.log") &
+        echo "$!" >| "$base_dir/node_pid.txt"
+    fi
 }
 
 gen_baker_account() {
@@ -45,11 +49,11 @@ gen_baker_account() {
 }
 
 start_baker() {
-    ("$tezos_baker" -d "$client_dir" run with local node "$node_dir" baker &>"$base_dir/baker.log") &
+    (sleep 5s && "$tezos_baker" -d "$client_dir" run with local node "$node_dir" baker &>"$base_dir/baker.log") &
 }
 
 start_endorser() {
-    ("$tezos_endorser" -d "$client_dir" run baker &>"$base_dir/endorser.log") &
+    (sleep 5s && "$tezos_endorser" -d "$client_dir" run baker &>"$base_dir/endorser.log") &
 }
 
 usage() {
@@ -69,7 +73,8 @@ usage() {
     echo "    zero or more peers. Note, that you have to provide at least one peer"
     echo "    for the baker (e.g. use dictator node), otherwise, bakers won't be able"
     echo "    to communicate."
-    echo "  [--encrypted]. Define whether generated baker secret key will be encrypted"
+    echo "  [--encrypted]. Define whether generated baker secret key will be encrypted."
+    echo "  [--no-background-node]. Run node in the foreground instead of background."
 }
 
 
@@ -81,6 +86,7 @@ fi
 stop_flag="false"
 encrypted_flag="false"
 base_chain="carthagenet"
+background_flag="true"
 peers=()
 
 while true; do
@@ -123,6 +129,10 @@ while true; do
         --base-chain )
             base_chain="$2"
             shift 2
+            ;;
+        --no-background-node )
+            background_flag="false"
+            shift
             ;;
         stop)
             stop_flag="true"
@@ -183,7 +193,6 @@ mkdir -p "$client_dir"
 
 "$tezos_client" -d "$client_dir" show address baker || gen_baker_account
 [[ -f $node_dir/identity.json ]] || gen_node_identity
-start_node
-sleep 5s
 start_baker
 start_endorser
+start_node

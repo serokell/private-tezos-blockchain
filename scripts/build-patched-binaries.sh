@@ -114,7 +114,7 @@ git clone --single-branch --branch master https://gitlab.com/tezos/tezos.git --d
 cd tezos
 git apply "../$patch_file"
 
-opam init --bare
+opam init --bare --disable-sandboxing
 make build-deps && eval "$(opam env)" && make
 chmod +x tezos-*
 cp tezos-client ../
