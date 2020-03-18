@@ -35,8 +35,11 @@ usage() {
     echo "OPTIONS:"
     echo "  --base-dir <filepath>. Base directory for compiled binaries"
     echo "    and genesis account."
+    echo "  --patch-template. Template patch file."
     echo "  [--genesis-key <public-key>]. Genesis public key used for binary compiling."
     echo "    If not provided, this script will generate a new genesis public key."
+    echo "  [--base-chain <babylonnet | carthagenet>]. Define base chain for your private"
+    echo "    blockchain. Default is 'carthagenet'."
     echo "  [--encrypted]. Define whether the generated genesis secret key will be encrypted"
 }
 
@@ -47,6 +50,8 @@ fi
 
 encrypted_flag=false
 genesis_key=""
+base_chain="carthagenet"
+patch_template="./patch_template.patch"
 while true; do
     if [[ $# -eq 0 ]]; then
         break
@@ -64,6 +69,14 @@ while true; do
             encrypted_flag=true
             shift
             ;;
+        --base-chain )
+            base_chain="$2"
+            shift 2
+            ;;
+        --patch-template )
+            patch_template="$2"
+            shift 2
+            ;;
         *)
             echo "Unexpected option \"$1\"."
             usage
@@ -73,10 +86,19 @@ while true; do
     esac
 done
 
+exit_flag="false"
+
 if [[ -z ${base_dir:-} ]]; then
     echo "\"--base-dir\" wasn't provided."
-    exit 1
+    exit_flag="true"
 fi
+
+if [[ -z ${patch_template:-} ]]; then
+    echo "\"--patch-template\" wasn't provided."
+    exit_flag="true"
+fi
+
+[[ $exit_flag == "true" ]] && exit 1
 
 mkdir -p "$base_dir"
 client_dir="$base_dir/client"
@@ -85,19 +107,32 @@ mkdir -p "$client_dir"
 [[ -z $genesis_key ]] && gen_genesis_key
 
 cd "$base_dir"
-# You can change base branch for your binaries here
-git clone --single-branch --branch babylonnet https://gitlab.com/tezos/tezos.git --depth 1
+patch_file="tezos.patch"
+cp "../$patch_template" "$patch_file"
+sed -i "s/genesis_key_placeholder/$genesis_key/g" "$patch_file"
+git clone --single-branch --branch master https://gitlab.com/tezos/tezos.git --depth 1
 cd tezos
-# Update this once genesis public key is moved to another file
-sed -i s/edpkugeDwmwuwyyD3Q5enapgEYDxZLtEUFFSrvVwXASQMVEqsvTqWu/"$genesis_key"/ \
-    src/proto_genesis/lib_protocol/data.ml
+git apply "../$patch_file"
 
 opam init --bare
 make build-deps && eval "$(opam env)" && make
 chmod +x tezos-*
 cp tezos-client ../
 cp tezos-node ../
-cp tezos-endorser-* ../
-cp tezos-baker-* ../
+case "$base_chain" in
+    babylonnet )
+        cp tezos-endorser-005-* ../
+        cp tezos-baker-005-* ../
+        ;;
+    carthagenet )
+        cp tezos-endorser-006-* ../
+        cp tezos-baker-006-* ../
+        ;;
+    *)
+        echo "$base_chain not supported. Only 'babylonnet' and 'carthagenet' are supported."
+        exit 1
+esac
+
 cd ..
 rm -rf tezos
+rm "$patch_file"

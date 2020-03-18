@@ -54,16 +54,17 @@ First step for running the private blockchain is generating a new genesis public
 building patched Tezos binaries. [build-patched-binaries.sh](./scripts/build-patched-binaries.sh)
 shell script will build these patched binaries.
 
-Note that you may have to adjust this script for your needs, e.g. `babylonnet` branch can be changed
-to `carthagenet`. Another case is that genesis public key can be moved from
-`src/proto_genesis/lib_protocol/data.ml` to another file.
+Note that you may have to adjust this script or [`patch_template.patch`](./patches/patch_template.patch)
+for your needs, e.g. genesis public keys can be moved from
+`src/proto_genesis_{babylonnet, carthagenet}/lib_protocol/data.ml` to another files.
 
 There are two ways to use this script:
 * You are the one who initiates the new private blockchain creation (the so-called dictator).
 Thus, you'll have to generate a new genesis public key. In order to do that, you can run
 the following command:
 ```sh
-./build-patched-binaries.sh --base-dir dictator
+./scripts/build-patched-binaries.sh --base-dir dictator --patch-template ./patches/patch_template.patch \
+  --base-chain carthagenet
 ```
 After running this command, the new genesis public-key will be stored in a `dictator/genesis_key.txt` file,
 so that you can share this key with other users of your private blockchain.
@@ -79,7 +80,7 @@ To get information about the `genesis` account, run:
 ```
 * Someone provided you a genesis public key. In this case, you should run the following command:
 ```sh
-./build-patched-binaries.sh --base-dir user --genesis-key <provided key>
+./scripts/build-patched-binaries.sh --base-dir user --genesis-key <provided key> --base-chain carthagenet
 ```
 After running this command, the `user` directory will contain patched Tezos binaries.
 
@@ -96,7 +97,7 @@ Here is an example of script usage:
   --tezos-client baker/tezos-client --tezos-node baker/tezos-node \
   --tezos-baker baker/tezos-baker-005-PsBabyM1 --tezos-endorser baker/tezos-endorser-005-PsBabyM1 \
   --net-addr 10.147.19.192:8732
-  --peer 10.147.19.49:8732
+  --peer 10.147.19.49:8732 --base-chain carthagenet
 ```
 Note that you should provide at least one peer to make the node communicate with the chain (e.g. you
 can provide address of the dictator node).
@@ -112,6 +113,13 @@ To stop the baker, do the following:
 ./scripts/start-baker.sh --base-dir baker stop
 ```
 
+To see information about the baker run:
+
+```
+tezos-client -d base_dir/client show address baker
+# add -S to see secret key as well
+```
+
 We recomend having at least two nodes and bakers in your private chain, but the more the better.
 
 ## Activating procotol and starting blockchain
@@ -125,66 +133,22 @@ actually start.
 Let's suppose dictator built binaries and started baker using `dictator` as a `base-dir`.
 E.g. the following commands were executed:
 ```sh
-./scripts/build-patched-binaries.sh --base-dir dictator
+./scripts/build-patched-binaries.sh --base-dir dictator --patch-template ./patches/patch_template.patch
 ./scripts/start-baker.sh --base-dir dictator \
   --tezos-client dictator/tezos-client --tezos-node dictator/tezos-node \
   --tezos-baker dictator/tezos-baker-005-PsBabyM1 --tezos-endorser dictator/tezos-endorser-005-PsBabyM1
-  --net-addr 10.147.19.192:8732
+  --net-addr 10.147.19.192:8732 --base-chain carthagenet
 ```
 Now the blockchain is ready to be launched. In order to launch it, the dictator should run the following:
 ```sh
 ./scripts/activate-protocol.sh --base-dir dictator --tezos-client \
-  dictator/tezos-client --parameters parameters.json
+  dictator/tezos-client --parameters parameters.json --base-chain carthagenet
 ```
-`parameters.json` describes different chain parameters, here is a sample parameter file:
-```
-{
-  "bootstrap_accounts": [
-    [
-      "edpkvRk8HnYe9tAgTEAYEhSo4N7qcrjoAFnj4ZiRb7DxFDijdrXxbK",
-      "4000000000000"
-    ],
-    [
-      "edpkvUS1z9QGXr6f89dNF5WyeRCFuK6PYWYrMHcpU9kQ2TevD66fDG",
-      "4000000000000"
-    ],
-    [
-      "edpktezaD1wnUa5pT2pvj1JGHNey18WGhPc9fk9bbppD33KNQ2vH8R",
-      "4000000000000"
-    ]
-  ],
-  "preserved_cycles": 2,
-  "blocks_per_cycle": 8,
-  "blocks_per_commitment": 4,
-  "blocks_per_roll_snapshot": 4,
-  "blocks_per_voting_period": 64,
-  "time_between_blocks": [
-    "10",
-    "20"
-  ],
-  "endorsers_per_block": 32,
-  "hard_gas_limit_per_operation": "800000",
-  "hard_gas_limit_per_block": "8000000",
-  "proof_of_work_threshold": "-1",
-  "tokens_per_roll": "8000000000",
-  "michelson_maximum_type_size": 1000,
-  "seed_nonce_revelation_tip": "125000",
-  "origination_size": 257,
-  "block_security_deposit": "512000000",
-  "endorsement_security_deposit": "64000000",
-  "block_reward": "16000000",
-  "endorsement_reward": "2000000",
-  "cost_per_byte": "1000",
-  "hard_storage_limit_per_operation": "60000",
-  "test_chain_duration": "1966080",
-  "quorum_min": 2000,
-  "quorum_max": 7000,
-  "min_proposal_quorum": 500,
-  "initial_endorsers": 1,
-  "delay_per_missing_endorsement": "1"
-}
-```
-In this configuration, `bootstrap_accounts` has information about account public keys
+`parameters.json` describes different chain parameters, here are sample parameters files for
+* [babylonnet](./parameters/parameters_babylonnet.json)
+* [carthagenet](./parameters/parameters_carthagenet.json)
+
+In this parameters, `bootstrap_accounts` has information about account public keys
 which will have some tokens (4M of tez in this example) after the chain start. Note
 that all bakers should have some tokens, thus, they should be listed in `bootstrap_accounts`.
 

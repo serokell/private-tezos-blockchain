@@ -23,18 +23,20 @@ usage() {
     echo "  --tezos-client <filepath>. Path for patched tezos-client executable"
     echo "  --parameters <filepath>. Path to JSON file with protocol parameters."
     echo "  [--fitness <int>]. Protocol activation fitness, default value is $fitness."
-    echo "  [--protocol <protocol-name>]. Protocol to activate, default value is"
-    echo "  $protocol"
-
+    echo "  [--base-chain <babylonnet | carthagenet>]. Define base chain for your private"
+    echo "    blockchain. Default is 'carthagenet'."
 }
 
-protocol="PsBabyM1eUXZseaJdmXFApDSBqj8YBfwELoxZHHW77EMcAbbwAS"
 fitness="25"
 
 if [[ $# -eq 0 || $1 == "--help" ]]; then
     usage
     exit 1
 fi
+
+base_chain="carthagenet"
+carthagenet_protocol="PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+babylonnet_protocol="PsBabyM1eUXZseaJdmXFApDSBqj8YBfwELoxZHHW77EMcAbbwAS"
 
 while true; do
     if [[ $# -eq 0 ]]; then
@@ -53,12 +55,12 @@ while true; do
             parameters="$2"
             shift 2
             ;;
-        --fitness)
-            fitness="$2"
+        --base-chain )
+            base_chain="$2"
             shift 2
             ;;
-        --procotol)
-            protocol="$2"
+        --fitness)
+            fitness="$2"
             shift 2
             ;;
         *)
@@ -87,6 +89,19 @@ if [[ -z ${parameters:-} ]]; then
 fi
 
 [[ $exit_flag == "true" ]] && exit 1
+
+case "$base_chain" in
+    babylonnet )
+        protocol="$babylonnet_protocol"
+        ;;
+    carthagenet )
+        protocol="$carthagenet_protocol"
+        ;;
+    *)
+        echo "$base_chain not supported. Only 'babylonnet' and 'carthagenet' are supported."
+        exit 1
+        ;;
+esac
 
 mkdir -p "$base_dir"
 client_dir="$base_dir/client"
