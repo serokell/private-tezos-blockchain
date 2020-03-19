@@ -27,6 +27,10 @@ There are two ways to use these scripts:
 1) Run them as is on your machine.
 2) Run them inside docker container.
 
+```sh
+# TODO: It might be better to have all the 'outside docker' commands and 'inside docker commands' grouped together.  It would make it easier to follow one set of instructions  
+```
+
 ### Running scripts outside docker prerequisites
 
 Since running a private blockchain requires compiling patched Tezos binaries from
@@ -135,6 +139,11 @@ This will do roughly the same things as in the previous section but in the docke
 
 In order to run baker, you should use the [`start-baker.sh`](./scripts/start-baker.sh)
 shell script, for this you will need Tezos binaries from the previous step.
+
+```sh
+#TODO: Usinng the `baker` example directory here and the `dictator` example directory in the later section is a bit confusing...Maybe we should just use `base-dir` as is used in the docker file?
+```
+
 Let's suppose baker built binaries using `baker` as a `base-dir` with some provided genesis key.
 Also, on this step you need to specify an IP address on which baker can be accessed on the
 network.
@@ -178,6 +187,9 @@ To run baker inside docker container run the following:
 ```sh
 # Note that here you should specify the port using which your node can be
 # accessed, thus you also need to expose and publish this port for docker.
+
+# TODO: the "here you should" and "you also need to" phrases in this comment made me think there were changes I needed to make or other steps I needed to do...can we make it more clear that this cmd can be run exactly as it is written here?
+
 docker run --expose 8733 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
   -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet \
   --peer 10.147.19.104:8733
@@ -219,6 +231,10 @@ Now the blockchain is ready to be launched. In order to launch it, the dictator 
 In this parameters, `bootstrap_accounts` has information about account public keys
 which will have some tokens (4M of tez in this example) after the chain start. Note
 that all bakers should have some tokens, thus, they should be listed in `bootstrap_accounts`.
+```sh
+#TODO: It needs to be more clear that what needs to be done here is to take the public key that was returned from start-baker and add it as an addditional entry to the `boodstrap_account` list
+
+#It's also not clear that the following comment really means to just leave the three existing `bootstrap_accounts` in the file when adding the new one for the baker
 
 As an addition, we recommend to add some more bootstrap accounts that are not bakers, because
 bakers run out of tokens before they started to get rewarded for baking. In such situation
@@ -230,6 +246,9 @@ At first, you will need container running the dictator node.
 
 Second step is to copy parameters file to the docker filesystem:
 ```sh
+
+# TODO: We should add that the <container_name> can be retrieved by the command 'docker ps'
+
 docker cp parameters/parameters_carthagenet.json <container_name>:/parameters.json
 ```
 
@@ -276,7 +295,12 @@ Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
 And transfer some tokens:
 ```sh
 $ tezos-client transfer 100 from alice to bob --burn-cap 0.257
+
+#TODO: This gives the following error message, even though the transfer seems to succeed:
+# Fatal error:
+#  transfer simulation failed
 ```
+
 
 After this, `bob` will have some tokens:
 ```sh
@@ -286,6 +310,9 @@ $ tezos-client get balance for bob
 
 ### Using docker
 
+```sh
+#TODO: maybe we should explain that this command allows you to browse the file system within the docker container:
+```
 Run interactive shell session inside your running node container:
 ```sh
 docker exec -it <container_name> bash
@@ -301,6 +328,10 @@ Consider using different `base-dir`s for different private chains, otherwise you
 highly likely will encounter baking errors. Also, nodes from different chains shouldn't be able
 to communicate with each other.
 
+
+```sh
+#TODO: We should have a worked-out example in the docker section of exactly how to use muiltiple docker volumes 
+```
 As well as different `base-dir`, you should use different docker volumes for different
 nodes even if they're running on the same
 chain.
