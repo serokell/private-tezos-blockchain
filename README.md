@@ -169,6 +169,9 @@ tezos-client -d base_dir/client show address baker
 
 We recomend having at least two nodes and bakers in your private chain, but the more the better.
 
+However, if you want to have single-node chain, you can change `--bootstrap-threshold` parameter to
+zero in [`start-baker.sh`](./scripts/start-baker.sh#L28)
+
 ### Using docker
 
 To run baker inside docker container run the following:
@@ -217,6 +220,10 @@ In this parameters, `bootstrap_accounts` has information about account public ke
 which will have some tokens (4M of tez in this example) after the chain start. Note
 that all bakers should have some tokens, thus, they should be listed in `bootstrap_accounts`.
 
+As an addition, we recommend to add some more bootstrap accounts that are not bakers, because
+bakers run out of tokens before they started to get rewarded for baking. In such situation
+the chain can stop.
+
 ### Using docker
 
 At first, you will need container running the dictator node.
@@ -238,6 +245,8 @@ docker exec <container_name> ./scripts/activate-protocol.sh \
 Once the protocol is activated, you can play with the new chain.
 For example, you can transfer some tokens from one account to another using `tezos-client`.
 You will need either a local or a remote node for this.
+
+### Without docker
 
 Account `alice` has 4m of tez as a bootstrap account, `alice`'s account info
 (its public key is listed in `bootstrap_accounts`):
@@ -275,11 +284,26 @@ $ tezos-client get balance for bob
 100.0 ꜩ
 ```
 
+### Using docker
+
+Run interactive shell session inside your running node container:
+```sh
+docker exec -it <container_name> bash
+```
+`tezos-client` binary is in `/base-dir`, it can be used the same way as in "non-docker" case,
+node is running on `localhost:8732`.
+
+Don't forget to copy contract code files before originating them inside docker container.
+
 ## Additional notes
 
 Consider using different `base-dir`s for different private chains, otherwise you
 highly likely will encounter baking errors. Also, nodes from different chains shouldn't be able
 to communicate with each other.
+
+As well as different `base-dir`, you should use different docker volumes for different
+nodes even if they're running on the same
+chain.
 
 ### Creating peer-to-peer network
 
