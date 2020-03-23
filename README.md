@@ -149,11 +149,16 @@ Also, on this step you need to specify an IP address on which baker can be acces
 network.
 Here is an example of script usage:
 ```sh
+#TODO: These IP addresses should be changed to some localhost:port combination that will work for anyone doing this tutorial
+#TODO: Also, we should try to create a two-baker configuration set that can work for the localhost tutorial
+
 ./scripts/start-baker.sh --base-dir baker \
   --tezos-client baker/tezos-client --tezos-node baker/tezos-node \
   --tezos-baker baker/tezos-baker-005-PsBabyM1 --tezos-endorser baker/tezos-endorser-005-PsBabyM1 \
   --net-addr 10.147.19.192:8732
   --peer 10.147.19.49:8732 --base-chain carthagenet
+
+#TODO: We should clarify which address in this example is supposed to be used as the peer...i.e. that it is the 'net-addr' of the dictator node  
 ```
 Note that you should provide at least one peer to make the node communicate with the chain (e.g. you
 can provide address of the dictator node).
@@ -261,6 +266,11 @@ docker exec <container_name> ./scripts/activate-protocol.sh \
 
 ## Using private chain
 
+```sh
+#TODO: We might want to provide some sanity checks to verify everything is working up to this points, as it gets hard to debug if the following examples fail
+# For example, verify that http://localhost:8732/chains/main/blocks/head returns valid JSON and describe what should be seen in the baker.log and node.log files 
+```
+
 Once the protocol is activated, you can play with the new chain.
 For example, you can transfer some tokens from one account to another using `tezos-client`.
 You will need either a local or a remote node for this.
@@ -330,7 +340,7 @@ to communicate with each other.
 
 
 ```sh
-#TODO: We should have a worked-out example in the docker section of exactly how to use muiltiple docker volumes 
+#TODO: If we suggest this multiple docker volume approach, we should have a worked-out example showing exactly how to do this 
 ```
 As well as different `base-dir`, you should use different docker volumes for different
 nodes even if they're running on the same
