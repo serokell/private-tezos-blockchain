@@ -319,12 +319,13 @@ E.g. the following commands were executed:
 ```
 ```sh
 #TODO: The following section can be combined with the similar section in the Docker example, as long as it doesnt make the flow too confusing
+```
 If run sucessfully, this script will output something similar to the following:
-
+```sh
       Hash: tz1SJNRNLwACDSLDLk249vFnZjZyV9MVNKEg
       Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
       Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
-
+```
 The Public Key value will need to be pasted into a JSON paramter file that we will provide when launching the blockchain
 
 Two sample files are provided, depending on the version of the network you plan to run:
