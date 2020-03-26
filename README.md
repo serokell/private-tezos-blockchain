@@ -11,28 +11,199 @@ This doc will describe how to run your own private Tezos blockchain.
 ## General overview
 
 In order to run a private blockchain, you should do the following:
-* Generate new genesis key, and build patched binaries
-(using `build-patched-binaries.sh` script).
-* Run a bunch of nodes and bakers, at least two, but the more the better
-(using `start-baker.sh` script).
-* Customize chain parameters to your taste and activate the procotol
-(using `activate-protocol.sh` script).
-* Play with your chain.
-
-More detailed instructions are presented further.
-
-## Prerequisites
+* Generate a new genesis key, and build patched binaries
+(using the `build-patched-binaries.sh` script).
+* Run a number of nodes and bakers - at least two, but the more the better
+(using the `start-baker.sh` script).
+* Customize the chain parameters and activate the procotol
+(using the `activate-protocol.sh` script).
+* Experiment with the chain.
 
 There are two ways to use these scripts:
 1) Run them as is on your machine.
-2) Run them inside docker container.
+2) Run them inside a docker container.
 
+More detailed instructions are presented in the following sections.
+
+## Running the scripts inside Docker
+
+### Prerequisites
+
+We assume you have docker installed and running.
+
+The file [`Dockerfile`](./Dockerfile) will be used to build a docker image
+with all the required tezos dependencies.
+Run the following command:
 ```sh
-# TODO: It might be better to have all the 'outside docker' commands and 'inside docker commands' grouped together.  It would make it easier to follow one set of instructions  
+docker build -t ubuntu-tezos .
 ```
 
-### Running scripts outside docker prerequisites
+In order to use this image you will also need a docker volume. To create one, run the following command:
+```sh
+docker volume create ubuntu-tezos-volume
+```
 
+This docker image has [`./scripts/docker.sh`](./scripts/docker.sh) as an entrypoint.
+This script wraps the [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
+and [`start-baker.sh`](./scripts/start-baker.sh) scripts providing the required paths
+to the tezos-binaries stored inside the docker volume.
+
+### Generating a new genesis public key and building patched binaries
+
+To generate patched binaries and create a new genesis public key, run the following:
+```
+docker run -v ubuntu-tezos-volume:/base-dir -i \
+  -t ubuntu-tezos build-binaries --base-chain carthagenet
+```
+
+If you have been provided a genesis public key, instead run:
+```
+docker run -v ubuntu-tezos-volume:/base-dir -i -t ubuntu-tezos build-binaries \
+  --genesis-key <provided key> --base-chain carthagenet
+```
+
+### Running a baker
+To run a baker inside the docker container enter the following:
+```sh
+docker run --expose 8733 -p 8732:8732 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
+  -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet
+```
+The --expose parameter makes a port available outside of Docker, while the -p parameter maps local ports to Docker ports.
+
+Port `8732` is used as an node rpc port and exposed by the docker image by default.
+
+
+If run sucessfully, this script will output something similar to the following:
+```sh
+      Hash: tz1SJNRNLwACDSLDLk249vFnZjZyV9MVNKEg
+      Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
+      Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
+```
+### Activating procotol and starting blockchain
+The Public Key from the previous step will now need to be pasted into a JSON paramter file.
+
+Two sample JSON files are provided, depending on the version of the network you plan to run:
+* ./parameters/parameters_babylonnet.json
+* ./parameters/parameters_carthagenet.json
+
+In these files, `bootstrap_accounts` has information about account public keys
+that have access to tokens (4M of tez in these example files). Note
+that all bakers should have some tokens, thus, we need to add the public key for the baker just created into `bootstrap_accounts`.
+
+Starting with the appropriate sample file for the network version you plan to run,
+modify it by adding an entry in the bootstrap_accounts section for the public key provided in the previous step.
+
+e.g. paste an entry like this into the bootstrap_accounts section:
+```sh
+    [
+      "edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz",
+      "4000000000000"
+    ],
+```
+The exisiting bootstrap accounts should remain in the file, and will be used later in this example.
+
+Copy the edited parameters file to the docker filesystem:
+```sh
+docker cp my-parameters.json <container_name>:/parameters.json
+```
+where my-parameters.json is the file you have just edited. The <container_name> can be retrieved by the command 'docker ps'
+
+The last step is to run the activation script for the running docker container:
+```sh
+docker exec <container_name> ./scripts/activate-protocol.sh \
+  --base-dir /base-dir --tezos-client /base-dir/tezos-client \
+  --parameters /parameters.json
+```
+
+If you want to browse the file system inside your Docker container, you can run the command:
+```sh
+docker exec -it <container_name> bash
+```
+This will run an interactive shell session inside your running node container.
+
+### Using the private chain
+Before continuing, you can verify things are working properly by entering into your browser:
+```sh
+http://localhost:8732/chains/main/blocks/head
+```
+You should see some valid JSON being returned. If things are not working correctly, you can look at the contents of the files
+```sh
+base-dir/baker.log
+base-dir/node.log
+```
+for possible error messages.
+
+
+Once the protocol is activated, you can play with the new chain.
+For example, you can transfer some tokens from one account to another using `tezos-client`.
+
+We will use the alias 'alice' to refer to the bootstrap_accounts entry with these values:
+```sh
+Hash: tz1akcPmG1Kyz2jXpS4RvVJ8uWr7tsiT9i6A
+Public Key: edpktezaD1wnUa5pT2pvj1JGHNey18WGhPc9fk9bbppD33KNQ2vH8R
+Secret Key: unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
+```
+Enter the following command:
+```sh
+$ tezos-client import secret key alice unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
+```
+If the alias is already defined, you will get the following error (which you can ignore as long as the secret key matches the entry in bootstrap_accounts):
+
+```sh
+Error:
+  The secret_key alias alice already exists.
+    The current value is unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG.
+    Use --force to update
+```
+If the secret key does not match, you can re-run the previous command adding --force onto the end
+
+Account `alice` has 4m of tez available.
+
+The secret keys used here are unencrypted, which is unsafe in general but used to for simplicity of the examples.
+Consider not using them if you care about privacy (even in a private blockchain without real money).
+In order to encrypt bakers and genesis secret keys, you can provide an `--encrypted` flag
+to `build-patched-binaries.sh` and `start-baker.sh` scripts.
+
+Let's generate a new account named `bob`:
+```sh
+$ tezos-client gen keys bob
+$ tezos-client show address bob
+Hash: tz1iW2e1i355D57GSuBHw928mJkuCwcZZWmk
+Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
+```
+
+And transfer some tokens:
+```sh
+$ tezos-client transfer 100 from alice to bob --burn-cap 0.257
+
+```sh
+#TODO: This gives the following error message, even though the transfer seems to succeed:
+# Fatal error:
+#  transfer simulation failed
+```
+
+After this, `bob` will have some tokens:
+```sh
+$ tezos-client get balance for bob
+100.0 ꜩ
+```
+
+### Additional notes
+
+Docker cannot acess files outside its container, so you will need to remember to copy any required files (contract code files, etc.) before originating them inside the docker container.
+
+Consider using different `base-dir`s for different private chains, otherwise you
+highly likely will encounter baking errors. Also, nodes from different chains shouldn't be able
+to communicate with each other.
+
+```sh
+#TODO: See if we can update the Docker example to run two bakers. Update the following comment depending on how we manage to do it
+```
+As well as different `base-dir`, you should use different docker volumes for different
+nodes even if they're running on the same chain.
+
+## Running the scripts without Docker
+### Prerequisites
 Since running a private blockchain requires compiling patched Tezos binaries from
 scratch, you will have to install the following dependencies:
 ```
@@ -58,38 +229,10 @@ sudo cp opam-2.0.3-x86_64-linux /usr/local/bin/opam
 sudo chmod a+x /usr/local/bin/opam
 ```
 
-### Running scripts inside docker prerequisites
-
-For this, you obviously will need installed docker.
-
-There is [`Dockerfile`](./Dockerfile) that should be used in order to build required docker image
-with all tezos library dependencies.
-Run the following command to do this:
-```sh
-docker build -t ubuntu-tezos .
-```
-
-In order to use this image you will also need docker volume, to create one run the following command:
-```sh
-docker volume create ubuntu-tezos-volume
-```
-
-This docker image has [`./scripts/docker.sh`](./scripts/docker.sh) as an entrypoint.
-This script basically wraps [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
-and [`start-baker.sh`](./scripts/start-baker.sh) scripts providing required paths
-for tezos-binaries stored inside the docker volume.
-
-## Generating new genesis public key and building patched binaries
-
-### Without docker
-
+### Generating new genesis public key and building patched binaries
 First step for running the private blockchain is generating a new genesis public key and
-building patched Tezos binaries. [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
+building patched Tezos binaries. The [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
 shell script will build these patched binaries.
-
-Note that you may have to adjust this script or [`patch_template.patch`](./patches/patch_template.patch)
-for your needs, e.g. genesis public keys can be moved from
-`src/proto_genesis_{babylonnet, carthagenet}/lib_protocol/data.ml` to another files.
 
 There are two ways to use this script:
 * You are the one who initiates the new private blockchain creation (the so-called dictator).
@@ -117,64 +260,38 @@ To get information about the `genesis` account, run:
 ```
 After running this command, the `user` directory will contain patched Tezos binaries.
 
-### Using docker
-
-To generate patched binaries do the following:
-```
-docker run -v ubuntu-tezos-volume:/base-dir -i \
-  -t ubuntu-tezos build-binaries --base-chain carthagenet
-```
-
-In case someone provided you a genesis public key:
-```
-docker run -v ubuntu-tezos-volume:/base-dir -i -t ubuntu-tezos build-binaries \
-  --genesis-key <provided key> --base-chain carthagenet
-```
-
-This will do roughly the same things as in the previous section but in the docker.
-
-## Running baker
-
-### Without docker
-
+### Running baker
 In order to run baker, you should use the [`start-baker.sh`](./scripts/start-baker.sh)
 shell script, for this you will need Tezos binaries from the previous step.
 
-```sh
-#TODO: Usinng the `baker` example directory here and the `dictator` example directory in the later section is a bit confusing...Maybe we should just use `base-dir` as is used in the docker file?
-```
-
-Let's suppose baker built binaries using `baker` as a `base-dir` with some provided genesis key.
-Also, on this step you need to specify an IP address on which baker can be accessed on the
-network.
+Let's suppose a baker has built binaries using `base-dir` with some provided genesis key.
+Also, on this step you need to specify an IP address on which the baker can be accessed on the network.
 Here is an example of script usage:
 ```sh
-#TODO: These IP addresses should be changed to some localhost:port combination that will work for anyone doing this tutorial
-#TODO: Also, we should try to create a two-baker configuration set that can work for the localhost tutorial
+#TODO: Also, we should probably include a two-baker configuration set that can work for the localhost tutorial. In a one-baker version the '--peer' address is just a dummy address and is not neeeded
 
-./scripts/start-baker.sh --base-dir baker \
-  --tezos-client baker/tezos-client --tezos-node baker/tezos-node \
-  --tezos-baker baker/tezos-baker-005-PsBabyM1 --tezos-endorser baker/tezos-endorser-005-PsBabyM1 \
-  --net-addr 10.147.19.192:8732
-  --peer 10.147.19.49:8732 --base-chain carthagenet
+./scripts/start-baker.sh --base-dir base-dir \
+  --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
+  --tezos-baker base-dir/tezos-baker-005-PsBabyM1 --tezos-endorser base-dir/tezos-endorser-005-PsBabyM1 \
+  --rpc-addr localhost:8732 --net-addr localhost:8832 \
+  --peer localhost:8833 --base-chain carthagenet
 
-#TODO: We should clarify which address in this example is supposed to be used as the peer...i.e. that it is the 'net-addr' of the dictator node  
+#Note that addresses specified as --peer should be addresses specified as '--net-addr' of another node
 ```
-Note that you should provide at least one peer to make the node communicate with the chain (e.g. you
-can provide address of the dictator node).
 This script will generate the new node identity in the `baker/node` directory and the new Tezos account
-with `baker` alias (all `tezos-client` related files will be accessible in the `baker/client` directory),
-this `baker` public key should be provided to the chain dictator (person, who initiated
+with `baker` alias (all `tezos-client` related files will be accessible in the `baker/client` directory).
+
+This `baker` public key should be provided to the chain dictator (the person who initiated
 the private chain creation). This public key can be found in the `baker/client/public_keys` file.
 After identity and account generation, this script will run `tezos-node` along
-with baker and endorser daemons in the background. Now, once the new protocol is activated, it will start baking blocks.
+with baker and endorser daemons in the background. Once the new protocol is activated, it will start baking blocks.
 
 To stop the baker, do the following:
 ```sh
-./scripts/start-baker.sh --base-dir baker stop
+./scripts/start-baker.sh --base-dir base-dir stop
 ```
 
-To see information about the baker run:
+To see information about the baker, run:
 
 ```
 tezos-client -d base_dir/client show address baker
@@ -183,170 +300,71 @@ tezos-client -d base_dir/client show address baker
 
 We recomend having at least two nodes and bakers in your private chain, but the more the better.
 
-However, if you want to have single-node chain, you can change `--bootstrap-threshold` parameter to
+If you want to have single-node chain, you can change `--bootstrap-threshold` parameter to
 zero in [`start-baker.sh`](./scripts/start-baker.sh#L28)
 
-### Using docker
+### Activating procotol and starting blockchain
+After building and running the baker on the dictator machine, the dictator should activate the protocol
+and bake the first block by running the [`activate-protocol.sh`](./scripts/activate-protocol.sh) shell script.
+After activating the new protocol and baking the first block, the private blockchain will start.
 
-To run baker inside docker container run the following:
-```sh
-# Note that here you should specify the port using which your node can be
-# accessed, thus you also need to expose and publish this port for docker.
-
-# TODO: the "here you should" and "you also need to" phrases in this comment made me think there were changes I needed to make or other steps I needed to do...can we make it more clear that this cmd can be run exactly as it is written here?
-
-docker run --expose 8733 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
-  -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet \
-  --peer 10.147.19.104:8733
-```
-
-This will do roughly the same things as in the previous section but in the docker.
-
-Port `8732` is used as an node rpc port and exposed by the docker image by default.
-Consider publishing it as well in case you want to interact with this node over RPC.
-
-## Activating procotol and starting blockchain
-
-### Without docker
-
-After building and running the baker on the dictator machine, the dictator should activate protocol
-and bake the first block. In order to do that, one should use
-[`activate-protocol.sh`](./scripts/activate-protocol.sh) shell script.
-It will activate the new protocol and bake the first block, after that the private blockchain will
-actually start.
-
-Let's suppose dictator built binaries and started baker using `dictator` as a `base-dir`.
+Let's suppose the dictator built binaries and started a baker using the `base-dir` directory.
 E.g. the following commands were executed:
 ```sh
-./scripts/build-patched-binaries.sh --base-dir dictator --patch-template ./patches/patch_template.patch
-./scripts/start-baker.sh --base-dir dictator \
-  --tezos-client dictator/tezos-client --tezos-node dictator/tezos-node \
-  --tezos-baker dictator/tezos-baker-005-PsBabyM1 --tezos-endorser dictator/tezos-endorser-005-PsBabyM1
+./scripts/build-patched-binaries.sh --base-dir base-dir --patch-template ./patches/patch_template.patch
+./scripts/start-baker.sh --base-dir base-dir \
+  --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
+  --tezos-baker base-dir/tezos-baker-005-PsBabyM1 --tezos-endorser base-dir/tezos-endorser-005-PsBabyM1
   --net-addr 10.147.19.192:8732 --base-chain carthagenet
 ```
-Now the blockchain is ready to be launched. In order to launch it, the dictator should run the following:
 ```sh
-./scripts/activate-protocol.sh --base-dir dictator --tezos-client \
-  dictator/tezos-client --parameters parameters.json --base-chain carthagenet
-```
-`parameters.json` describes different chain parameters, here are sample parameters files for
+#TODO: The following section can be combined with the similar section in the Docker example, as long as it doesnt make the flow too confusing
+If run sucessfully, this script will output something similar to the following:
+
+      Hash: tz1SJNRNLwACDSLDLk249vFnZjZyV9MVNKEg
+      Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
+      Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
+
+The Public Key value will need to be pasted into a JSON paramter file that we will provide when launching the blockchain
+
+Two sample files are provided, depending on the version of the network you plan to run:
 * [babylonnet](./parameters/parameters_babylonnet.json)
 * [carthagenet](./parameters/parameters_carthagenet.json)
 
-In this parameters, `bootstrap_accounts` has information about account public keys
-which will have some tokens (4M of tez in this example) after the chain start. Note
-that all bakers should have some tokens, thus, they should be listed in `bootstrap_accounts`.
-```sh
-#TODO: It needs to be more clear that what needs to be done here is to take the public key that was returned from start-baker and add it as an addditional entry to the `boodstrap_account` list
+In these files, `bootstrap_accounts` has information about account public keys
+that have access to tokens (4M of tez in these example files). Note
+that all bakers should have some tokens, thus, we need to add the public key for the baker just created into `bootstrap_accounts`.
 
-#It's also not clear that the following comment really means to just leave the three existing `bootstrap_accounts` in the file when adding the new one for the baker
+Starting with the appropriate sample file for the network version you plan to run,
+modify it by adding an entry in the bootstrap_accounts section for the public key provided in the previous step.
 
-As an addition, we recommend to add some more bootstrap accounts that are not bakers, because
-bakers run out of tokens before they started to get rewarded for baking. In such situation
+e.g. paste an entry like this into the bootstrap_accounts section:
+
+    [
+      "edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz",
+      "4000000000000"
+    ],
+
+The exisiting bootstrap accounts should remain in the file, and will be used later in this example.
+In general recommend having some more bootstrap accounts that are not bakers, because
+bakers run out of tokens before they begin to get rewarded for baking. In such situation
 the chain can stop.
 
-### Using docker
-
-At first, you will need container running the dictator node.
-
-Second step is to copy parameters file to the docker filesystem:
+Now the blockchain is ready to be launched. In order to launch it, the dictator should run the following:
 ```sh
-
-# TODO: We should add that the <container_name> can be retrieved by the command 'docker ps'
-
-docker cp parameters/parameters_carthagenet.json <container_name>:/parameters.json
+./scripts/activate-protocol.sh --base-dir base-dir --tezos-client \
+  base-dir/tezos-client --parameters my-parameters.json --base-chain carthagenet
 ```
+where my-parameters.json is the file you have just edited.
 
-And the last step is to run activation script for running docker container:
-```sh
-docker exec <container_name> ./scripts/activate-protocol.sh \
-  --base-dir /base-dir --tezos-client /base-dir/tezos-client \
-  --parameters /parameters.json
-```
-
-## Using private chain
-
-```sh
-#TODO: We might want to provide some sanity checks to verify everything is working up to this points, as it gets hard to debug if the following examples fail
-# For example, verify that http://localhost:8732/chains/main/blocks/head returns valid JSON and describe what should be seen in the baker.log and node.log files 
-```
-
-Once the protocol is activated, you can play with the new chain.
-For example, you can transfer some tokens from one account to another using `tezos-client`.
-You will need either a local or a remote node for this.
-
-### Without docker
-
-Account `alice` has 4m of tez as a bootstrap account, `alice`'s account info
-(its public key is listed in `bootstrap_accounts`):
-```
-Hash: tz1akcPmG1Kyz2jXpS4RvVJ8uWr7tsiT9i6A
-Public Key: edpktezaD1wnUa5pT2pvj1JGHNey18WGhPc9fk9bbppD33KNQ2vH8R
-Secret Key: unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
-```
-Note that `alice` should be a known alias for your `tezos-client`. In order to add it,
-do the following
-```sh
-$ tezos-client import secret key alice unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
-```
-However, unencrypted secret key usage is unsafe and used to provide more simplicity in this manual.
-Consider not using them if you care about privacy (even in a private blockchain without real money).
-In order to encrypt bakers and genesis secret keys, you can provide an `--encrypted` flag
-to `build-patched-binaries.sh` and `start-baker.sh` scripts.
-
-Let's generate a new account named `bob`:
-```sh
-$ tezos-client gen keys bob
-$ tezos-client show address bob
-Hash: tz1iW2e1i355D57GSuBHw928mJkuCwcZZWmk
-Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
-```
-
-And transfer some tokens:
-```sh
-$ tezos-client transfer 100 from alice to bob --burn-cap 0.257
-
-#TODO: This gives the following error message, even though the transfer seems to succeed:
-# Fatal error:
-#  transfer simulation failed
-```
+### Trying it out
+See [these steps](#using-the-private-chain) in the Docker section.  They should work both for docker and non-docker installations.
 
 
-After this, `bob` will have some tokens:
-```sh
-$ tezos-client get balance for bob
-100.0 ꜩ
-```
 
-### Using docker
+****************************************************************************************************
 
-```sh
-#TODO: maybe we should explain that this command allows you to browse the file system within the docker container:
-```
-Run interactive shell session inside your running node container:
-```sh
-docker exec -it <container_name> bash
-```
-`tezos-client` binary is in `/base-dir`, it can be used the same way as in "non-docker" case,
-node is running on `localhost:8732`.
-
-Don't forget to copy contract code files before originating them inside docker container.
-
-## Additional notes
-
-Consider using different `base-dir`s for different private chains, otherwise you
-highly likely will encounter baking errors. Also, nodes from different chains shouldn't be able
-to communicate with each other.
-
-
-```sh
-#TODO: If we suggest this multiple docker volume approach, we should have a worked-out example showing exactly how to do this 
-```
-As well as different `base-dir`, you should use different docker volumes for different
-nodes even if they're running on the same
-chain.
-
-### Creating peer-to-peer network
+## Creating a peer-to-peer network
 
 It is convenient to use a dedicated peer-to-peer network in order to run private
 blockchain.
