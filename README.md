@@ -79,7 +79,7 @@ If run sucessfully, this script will output something similar to the following:
       Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
       Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
 ```
-### Activating procotol and starting blockchain
+### Activating the procotol and starting the blockchain
 The Public Key from the previous step will now need to be pasted into a JSON paramter file.
 
 Two sample JSON files are provided, depending on the version of the network you plan to run:
@@ -197,7 +197,13 @@ highly likely will encounter baking errors. Also, nodes from different chains sh
 to communicate with each other.
 
 ```sh
-#TODO: See if we can update the Docker example to run two bakers. Update the following comment depending on how we manage to do it
+#TODO: See if we can update the Docker example to run two bakers.
+#If not, we need the instuction:
+
+To run a single-node chain, you musst change `--bootstrap-threshold` parameter to
+zero in [`start-baker.sh`](./scripts/start-baker.sh#L28)
+
+#Also, Update the following comment depending on how we manage to do it
 ```
 As well as different `base-dir`, you should use different docker volumes for different
 nodes even if they're running on the same chain.
@@ -229,8 +235,8 @@ sudo cp opam-2.0.3-x86_64-linux /usr/local/bin/opam
 sudo chmod a+x /usr/local/bin/opam
 ```
 
-### Generating new genesis public key and building patched binaries
-First step for running the private blockchain is generating a new genesis public key and
+### Generating a new genesis public key and building patched binaries
+The first step for running the private blockchain is generating a new genesis public key and
 building patched Tezos binaries. The [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
 shell script will build these patched binaries.
 
@@ -239,20 +245,20 @@ There are two ways to use this script:
 Thus, you'll have to generate a new genesis public key. In order to do that, you can run
 the following command:
 ```sh
-./scripts/build-patched-binaries.sh --base-dir dictator --patch-template ./patches/patch_template.patch \
+./scripts/build-patched-binaries.sh --base-dir base-dir --patch-template ./patches/patch_template.patch \
   --base-chain carthagenet
 ```
-After running this command, the new genesis public-key will be stored in a `dictator/genesis_key.txt` file,
+After running this command, the new genesis public-key will be stored in a `base-dir/genesis_key.txt` file,
 so that you can share this key with other users of your private blockchain.
-Apart from file with the new genesis public key, the `dictator` directory will also contain
+Apart from file with the new genesis public key, the `base-dir` directory will also contain
 patched Tezos binaries required for running the private blockchain.
-In addition to this, the `dictator` directory will have a `client` folder, which will contain `tezos-client`
+In addition to this, the `base-dir` directory will have a `client` folder, which will contain `tezos-client`
 related files, e.g. it will contain the public key hash, public and secret keys for the `genesis` account,
-in `dictator/client/public_key_hashs`, `dictator/client/public_keys` and `dictator/client/secret_keys`.
+in `base-dir/client/public_key_hashs`, `base-dir/client/public_keys` and `base-dir/client/secret_keys`.
 files respectively. This hash and keys will be used later in protocol activation.
 To get information about the `genesis` account, run:
 ```sh
-./dictator/tezos-client -d dictator/client show address genesis
+./base-dir/tezos-client -d base-dir/client show address genesis
 ```
 * Someone provided you a genesis public key. In this case, you should run the following command:
 ```sh
@@ -260,73 +266,79 @@ To get information about the `genesis` account, run:
 ```
 After running this command, the `user` directory will contain patched Tezos binaries.
 
-### Running baker
-In order to run baker, you should use the [`start-baker.sh`](./scripts/start-baker.sh)
-shell script, for this you will need Tezos binaries from the previous step.
+### Running bakers
+In order to run bakers, you should use the [`start-baker.sh`](./scripts/start-baker.sh)
+shell script. We will also need the modified Tezos binaries from the previous step.
 
-Let's suppose a baker has built binaries using `base-dir` with some provided genesis key.
-Also, on this step you need to specify an IP address on which the baker can be accessed on the network.
-Here is an example of script usage:
+Assume a baker has built binaries using `base-dir` with some provided genesis key.
+Enter these commands to run two bakers:
 ```sh
-#TODO: Also, we should probably include a two-baker configuration set that can work for the localhost tutorial. In a one-baker version the '--peer' address is just a dummy address and is not neeeded
-
 ./scripts/start-baker.sh --base-dir base-dir \
-  --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
-  --tezos-baker base-dir/tezos-baker-005-PsBabyM1 --tezos-endorser base-dir/tezos-endorser-005-PsBabyM1 \
-  --rpc-addr localhost:8732 --net-addr localhost:8832 \
-  --peer localhost:8833 --base-chain carthagenet
+ --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
+ --tezos-baker base-dir/tezos-baker-006-PsCARTHA --tezos-endorser base-dir/tezos-endorser-006-PsCARTHA \
+ --rpc-addr localhost:8732 --net-addr localhost:8832 \
+ --peer localhost:8833 --base-chain carthagenet
 
-#Note that addresses specified as --peer should be addresses specified as '--net-addr' of another node
+./scripts/start-baker.sh --base-dir base-dir-b \
+ --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
+ --tezos-baker base-dir/tezos-baker-006-PsCARTHA --tezos-endorser base-dir/tezos-endorser-006-PsCARTHA \
+ --rpc-addr localhost:8733 --net-addr localhost:8833 \
+ --peer localhost:8832 --base-chain carthagenet
 ```
-This script will generate the new node identity in the `baker/node` directory and the new Tezos account
+This script will generate the necessary files under two directories (corresponding to the two bakers):
+```sh
+base-dir
+base-dir-b
+```
+
+Inside each of these base directories, the new node identity will be in the `baker/node` directory and the new Tezos account
 with `baker` alias (all `tezos-client` related files will be accessible in the `baker/client` directory).
 
-This `baker` public key should be provided to the chain dictator (the person who initiated
+In general, the `baker` public keys should be provided to the chain dictator (the person who initiated
 the private chain creation). This public key can be found in the `baker/client/public_keys` file.
 After identity and account generation, this script will run `tezos-node` along
 with baker and endorser daemons in the background. Once the new protocol is activated, it will start baking blocks.
 
-To stop the baker, do the following:
+To stop the bakers, do the following:
 ```sh
 ./scripts/start-baker.sh --base-dir base-dir stop
+./scripts/start-baker.sh --base-dir-b base-dir stop
 ```
 
-To see information about the baker, run:
+To see information about the bakers, run:
 
 ```
-tezos-client -d base_dir/client show address baker
+tezos-client -d base-dir/client show address baker
+tezos-client -d base-dir-b/client show address baker
 # add -S to see secret key as well
 ```
 
 We recomend having at least two nodes and bakers in your private chain, but the more the better.
 
-If you want to have single-node chain, you can change `--bootstrap-threshold` parameter to
-zero in [`start-baker.sh`](./scripts/start-baker.sh#L28)
-
-### Activating procotol and starting blockchain
+### Activating the procotol and starting the blockchain
 After building and running the baker on the dictator machine, the dictator should activate the protocol
 and bake the first block by running the [`activate-protocol.sh`](./scripts/activate-protocol.sh) shell script.
 After activating the new protocol and baking the first block, the private blockchain will start.
 
-Let's suppose the dictator built binaries and started a baker using the `base-dir` directory.
-E.g. the following commands were executed:
-```sh
-./scripts/build-patched-binaries.sh --base-dir base-dir --patch-template ./patches/patch_template.patch
-./scripts/start-baker.sh --base-dir base-dir \
-  --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
-  --tezos-baker base-dir/tezos-baker-005-PsBabyM1 --tezos-endorser base-dir/tezos-endorser-005-PsBabyM1
-  --net-addr 10.147.19.192:8732 --base-chain carthagenet
-```
-```sh
+
 #TODO: The following section can be combined with the similar section in the Docker example, as long as it doesnt make the flow too confusing
 ```
-If run sucessfully, this script will output something similar to the following:
+Assuming the calls to start-baker.sh were successful, the output should have been something like:
+
 ```sh
       Hash: tz1SJNRNLwACDSLDLk249vFnZjZyV9MVNKEg
       Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
       Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
 ```
-The Public Key value will need to be pasted into a JSON paramter file that we will provide when launching the blockchain
+and:
+```
+      Hash: tz1Q7nseDTSnwn6eQeEsDyjk8XUargML5cmj
+      Public Key: edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs
+      Secret Key: unencrypted:edsk3v5XVo6n8ueSiFeRfLoB7FPcmJT74yRs8tFn8hEQs6HvkcP6f1
+```
+
+
+These Public Key values will need to be pasted into a JSON paramter file that we will provide when launching the blockchain
 
 Two sample files are provided, depending on the version of the network you plan to run:
 * [babylonnet](./parameters/parameters_babylonnet.json)
@@ -337,14 +349,19 @@ that have access to tokens (4M of tez in these example files). Note
 that all bakers should have some tokens, thus, we need to add the public key for the baker just created into `bootstrap_accounts`.
 
 Starting with the appropriate sample file for the network version you plan to run,
-modify it by adding an entry in the bootstrap_accounts section for the public key provided in the previous step.
+modify it by adding an entry in the bootstrap_accounts section for the public keys provided in the previous step.
 
 e.g. paste an entry like this into the bootstrap_accounts section:
-
+```sh
     [
       "edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz",
       "4000000000000"
     ],
+    [
+      "edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs",
+      "4000000000000"
+    ]
+```
 
 The exisiting bootstrap accounts should remain in the file, and will be used later in this example.
 In general recommend having some more bootstrap accounts that are not bakers, because
@@ -367,12 +384,12 @@ See [these steps](#using-the-private-chain) in the Docker section.  They should 
 
 ## Creating a peer-to-peer network
 
-It is convenient to use a dedicated peer-to-peer network in order to run private
+It is convenient to use a dedicated peer-to-peer network in order to run the private
 blockchain.
 
 One way to do that is to use the [ZeroTier](https://www.zerotier.com/) service.
 
-In order to create and use peer-to-peer network, you should do the following steps:
+In order to create and use the peer-to-peer network, follow these steps:
 
 1. Create a new ZeroTier account.
 
@@ -384,10 +401,10 @@ Once installed, your machine will be associated with a Node ID (10-digit address
 
 
 4. Go to the Network section of ZeroTier Central and create a new network.
-New network will be assotiated with Network ID.
+The new network will be assotiated with a Network ID.
 In order to join the Zerotier network run `sudo zerotier-cli join <network-id>`
 Then, ask participants to join. Use the Node IDs that were provided for your
-machine to add your machine to the network.
+machine to add them to the network.
 
 5. Ask other participants to also create a ZeroTier account and join the network you just created.
 
