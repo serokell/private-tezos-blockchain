@@ -1,0 +1,38 @@
+Working sample instructions for running two bakers with modified new-baker.sh script:
+
+---------------------------------------------------
+-- Same steps as per the read.me except for:
+---------------------------------------------------
+./scripts/start-baker.sh --base-dir base-dir \
+ --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
+ --tezos-baker base-dir/tezos-baker-006-PsCARTHA --tezos-endorser base-dir/tezos-endorser-006-PsCARTHA \
+ --rpc-addr localhost:8732 --net-addr localhost:8832 \
+ --peer localhost:8833 --base-chain carthagenet
+
+./scripts/start-baker.sh --base-dir base-dir-b \
+ --tezos-client base-dir/tezos-client --tezos-node base-dir/tezos-node \
+ --tezos-baker base-dir/tezos-baker-006-PsCARTHA --tezos-endorser base-dir/tezos-endorser-006-PsCARTHA \
+ --rpc-addr localhost:8733 --net-addr localhost:8833 \
+ --peer localhost:8832 --base-chain carthagenet
+
+---------------------------------------------------------------------
+-- add these entries to parameters_carthagenet.json
+-- (Using the public keys output from the two calls to start-baker.sh
+---------------------------------------------------------------------
+  "bootstrap_accounts": [
+    . . . . .
+    [
+      "edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz",
+      "4000000000000"
+    ],
+    [
+      "edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs",
+      "4000000000000"
+    ]
+    . . . . .
+
+---------------------------------------------------
+activate using base-dir
+---------------------------------------------------
+./scripts/activate-protocol.sh --base-dir base-dir --tezos-client base-dir/tezos-client \
+--parameters parameters/parameters_carthagenet.json --base-chain carthagenet

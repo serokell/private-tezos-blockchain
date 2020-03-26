@@ -25,7 +25,7 @@ start_node() {
             exit 1
             ;;
     esac
-    node_args=("--data-dir" "$node_dir" "--rpc-addr" "localhost:8732" "--net-addr" "$net_addr" "--no-bootstrap-peers" "--bootstrap-threshold" "1" "--network" "$network")
+    node_args=("--data-dir" "$node_dir" "--rpc-addr" "$rpc_addr" "--net-addr" "$net_addr" "--no-bootstrap-peers" "--bootstrap-threshold" "1" "--network" "$network")
     for peer in "${peers[@]:-}"; do
         node_args+=("--peer" "$peer")
     done
@@ -66,6 +66,7 @@ usage() {
     echo "  --tezos-node <filepath>. Path for patched tezos-node executable"
     echo "  --tezos-baker <filepath>. Path for patched tezos-baker executable"
     echo "  --tezos-endorser <filepath>. Path for patched tezos-endorser executable"
+    echo "  --rpc-addr <rpc-addr>. Define RPC address of the baker node"
     echo "  --net-addr <net-addr>. Define net address of the baker node"
     echo "  [--base-chain <babylonnet | carthagenet>]. Define base chain for your private"
     echo "    blockchain. Default is 'carthagenet'."
@@ -116,6 +117,10 @@ while true; do
             ;;
         --tezos-endorser)
             tezos_endorser="$2"
+            shift 2
+            ;;
+        --rpc-addr)
+            rpc_addr="$2"
             shift 2
             ;;
         --net-addr)
