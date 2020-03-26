@@ -20,8 +20,8 @@ In order to run a private blockchain, you should do the following:
 * Experiment with the chain.
 
 There are two ways to use these scripts:
-1) Run them as is on your machine.
-2) Run them inside a docker container.
+1) Run them inside a docker container.
+2) Run them directly on your local machine.
 
 More detailed instructions are presented in the following sections.
 
@@ -176,7 +176,6 @@ And transfer some tokens:
 ```sh
 $ tezos-client transfer 100 from alice to bob --burn-cap 0.257
 
-```sh
 #TODO: This gives the following error message, even though the transfer seems to succeed:
 # Fatal error:
 #  transfer simulation failed
@@ -256,6 +255,7 @@ In addition to this, the `base-dir` directory will have a `client` folder, which
 related files, e.g. it will contain the public key hash, public and secret keys for the `genesis` account,
 in `base-dir/client/public_key_hashs`, `base-dir/client/public_keys` and `base-dir/client/secret_keys`.
 files respectively. This hash and keys will be used later in protocol activation.
+
 To get information about the `genesis` account, run:
 ```sh
 ./base-dir/tezos-client -d base-dir/client show address genesis
@@ -377,10 +377,6 @@ where my-parameters.json is the file you have just edited.
 
 ### Trying it out
 See [these steps](#using-the-private-chain) in the Docker section.  They should work both for docker and non-docker installations.
-
-
-
-****************************************************************************************************
 
 ## Creating a peer-to-peer network
 
