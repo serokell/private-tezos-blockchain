@@ -320,8 +320,8 @@ After building and running the baker on the dictator machine, the dictator shoul
 and bake the first block by running the [`activate-protocol.sh`](./scripts/activate-protocol.sh) shell script.
 After activating the new protocol and baking the first block, the private blockchain will start.
 
-
-#TODO: The following section can be combined with the similar section in the Docker example, as long as it doesnt make the flow too confusing
+```sh
+#TODO: If we can get the Docker example to run with two bakers, the following section can be combined with the similar section in the Docker example...
 ```
 Assuming the calls to start-baker.sh were successful, the output should have been something like:
 
