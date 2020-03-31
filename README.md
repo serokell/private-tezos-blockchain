@@ -4,7 +4,7 @@
    - SPDX-License-Identifier: MPL-2.0
    -->
 
-# Running private blockchain
+# Running a private blockchain
 
 This doc will describe how to run your own private Tezos blockchain.
 
@@ -38,15 +38,16 @@ Run the following command:
 docker build -t ubuntu-tezos .
 ```
 
-In order to use this image you will also need a docker volume. To create one, run the following command:
+In order to use this image you will also need two docker volumes. Run the following commands:
 ```sh
 docker volume create ubuntu-tezos-volume
+docker volume create ubuntu-tezos-volume-1
 ```
 
-This docker image has [`./scripts/docker.sh`](./scripts/docker.sh) as an entrypoint.
+These docker images have [`./scripts/docker.sh`](./scripts/docker.sh) as their entrypoint.
 This script wraps the [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
-and [`start-baker.sh`](./scripts/start-baker.sh) scripts providing the required paths
-to the tezos-binaries stored inside the docker volume.
+and [`start-baker.sh`](./scripts/start-baker.sh) scripts, providing the required paths
+to the tezos-binaries stored inside the docker volumes.
 
 ### Generating a new genesis public key and building patched binaries
 
@@ -62,8 +63,10 @@ docker run -v ubuntu-tezos-volume:/base-dir -i -t ubuntu-tezos build-binaries \
   --genesis-key <provided key> --base-chain carthagenet
 ```
 
-### Running a baker
-To run a baker inside the docker container enter the following:
+(you can reply N to the questions about opam)
+### Running the first baker
+This example will walk you through running two bakers, each running in its own Docker container.
+To run the first, enter the following:
 ```sh
 docker run --expose 8733 -p 8732:8732 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
   -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet
@@ -72,47 +75,53 @@ The --expose parameter makes a port available outside of Docker, while the -p pa
 
 Port `8732` is used as an node rpc port and exposed by the docker image by default.
 
+This script will print the baker's IP address and public key, both of which will be used in the following steps.
+First your should see the IP address:
+```sh
+Container IP: 172.17.0.2
+```
+This IP address will used as a peer for the second node we create.
 
-If run sucessfully, this script will output something similar to the following:
+You will also see some output containing the public key:
 ```sh
       Hash: tz1SJNRNLwACDSLDLk249vFnZjZyV9MVNKEg
       Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
       Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
 ```
 
-### Running two bakers on the once machine using Docker
+At this point, you should also see 'Too few connections (0)' being printed repeatedly on the terminal.
+Leave this terminal running and open another.
 
-To run the first baker node inside the docker container do the following:
+In this second terminal window, enter:
+
 ```sh
-docker run --expose 8733 -p 8732:8732 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
-  -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet
+sudo docker run -v ubuntu-tezos-volume-1:/base-dir -i \
+  -t ubuntu-tezos build-binaries --base-chain carthagenet
 ```
-This script will print baker's address and publick key which runs on this node.
-Apart from that it will print container ip-address using the following format:
+
+(you can reply N to the questions about opam)
+
+And now run the 2nd baker:
 ```sh
-Container IP: 172.17.0.2
-```
-
-We will use this IP as a peer for the second node.
-
-Now in order to run the second baker node inside the docker container do the following:
-```
-docker run --expose 8734 -p 8734:8734 -v ubuntu-tezos-volume-1:/base-dir \
+sudo docker run --expose 8734 -p 8734:8734 -v ubuntu-tezos-volume-1:/base-dir \
   -i -t ubuntu-tezos start-baker --net-addr-port 8734 --base-chain carthagenet --peer 172.17.0.2:8733
 ```
 
-Note that nodes should use different docker volumes. Also, they shouldn't use same host
-ports (otherwise, you'll get docker error).
-
-If the nodes are able to see each other you'll see the following line in the node output:
+If the nodes are able to sucessfully see each other you will see the following lines output in both the first and second shell windows:
 ```sh
 p2p.maintenance: Too few connections (1)
 ```
 
-Which means that node now has one peer.
+This means that each node now has one peer.
+
 
 ### Activating the procotol and starting the blockchain
-The Public Key from the previous step will now need to be pasted into a JSON paramter file.
+Leave the second shell running as well, and open a third session. In the new shell, first get the names of the two containers that are now running via the command:
+```sh
+docker ps
+```
+We also need to gather the public keys created from the two bakers started in the previous steps.
+These public keys will need to be pasted into a JSON parameter file.
 
 Two sample JSON files are provided, depending on the version of the network you plan to run:
 * ./parameters/parameters_babylonnet.json
@@ -123,29 +132,42 @@ that have access to tokens (4M of tez in these example files). Note
 that all bakers should have some tokens, thus, we need to add the public key for the baker just created into `bootstrap_accounts`.
 
 Starting with the appropriate sample file for the network version you plan to run,
-modify it by adding an entry in the bootstrap_accounts section for the public key provided in the previous step.
+modify it by adding an entry in the bootstrap_accounts section for each of the two public key provided in the previous step.
 
-e.g. paste an entry like this into the bootstrap_accounts section:
+e.g. paste entries like this into the bootstrap_accounts section:
 ```sh
     [
       "edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz",
       "4000000000000"
     ],
+    [
+      "edpkum3W1vGfsF19uNNnjdThGvbTBXbBcKyCmEAuV5TPfensRxYyqA",
+      "4000000000000"
+    ],
 ```
 The exisiting bootstrap accounts should remain in the file, and will be used later in this example.
 
-Copy the edited parameters file to the docker filesystem:
+Copy the edited parameters file to the two docker filesystems:
 ```sh
 docker cp my-parameters.json <container_name>:/parameters.json
+docker cp my-parameters.json <container_name_1>:/parameters.json
 ```
-where my-parameters.json is the file you have just edited. The <container_name> can be retrieved by the command 'docker ps'
+where my-parameters.json is the file you have just edited. <container_name> and <container_name_1> can be retrieved by the command 'docker ps'
 
-The last step is to run the activation script for the running docker container:
+The last step is to run the activation script for the running docker containers.
+For this step, choose the container name corresponding to the first container we created (select the one shown to have been started earliest)
 ```sh
 docker exec <container_name> ./scripts/activate-protocol.sh \
   -A <container_ip> -P 8732
   --base-dir /base-dir --tezos-client /base-dir/tezos-client \
   --parameters /parameters.json
+```
+where <container_ip> is the IP address displayed when we ran the first baker
+
+```sh
+#TODO: This causes the following error, but seems to succeed anyway:
+# Error:
+#  Unrecognized command.
 ```
 
 If you want to browse the file system inside your Docker container, you can run the command:
@@ -165,7 +187,6 @@ base-dir/baker.log
 base-dir/node.log
 ```
 for possible error messages.
-
 
 Once the protocol is activated, you can play with the new chain.
 For example, you can transfer some tokens from one account to another using `tezos-client`.
@@ -223,22 +244,6 @@ $ tezos-client get balance for bob
 ### Additional notes
 
 Docker cannot acess files outside its container, so you will need to remember to copy any required files (contract code files, etc.) before originating them inside the docker container.
-
-Consider using different `base-dir`s for different private chains, otherwise you
-highly likely will encounter baking errors. Also, nodes from different chains shouldn't be able
-to communicate with each other.
-
-```sh
-#TODO: See if we can update the Docker example to run two bakers.
-#If not, we need the instuction:
-
-To run a single-node chain, you musst change `--bootstrap-threshold` parameter to
-zero in [`start-baker.sh`](./scripts/start-baker.sh#L28)
-
-#Also, Update the following comment depending on how we manage to do it
-```
-As well as different `base-dir`, you should use different docker volumes for different
-nodes even if they're running on the same chain.
 
 ## Running the scripts without Docker
 ### Prerequisites
@@ -354,7 +359,7 @@ and bake the first block by running the [`activate-protocol.sh`](./scripts/activ
 After activating the new protocol and baking the first block, the private blockchain will start.
 
 ```sh
-#TODO: If we can get the Docker example to run with two bakers, the following section can be combined with the similar section in the Docker example...
+#TODO: We can probably combine the following section with the similar section in the Docker example...
 ```
 Assuming the calls to start-baker.sh were successful, the output should have been something like:
 
@@ -369,7 +374,6 @@ and:
       Public Key: edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs
       Secret Key: unencrypted:edsk3v5XVo6n8ueSiFeRfLoB7FPcmJT74yRs8tFn8hEQs6HvkcP6f1
 ```
-
 
 These Public Key values will need to be pasted into a JSON paramter file that we will provide when launching the blockchain
 
