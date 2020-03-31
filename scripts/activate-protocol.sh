@@ -22,12 +22,16 @@ usage() {
     echo "    data."
     echo "  --tezos-client <filepath>. Path for patched tezos-client executable"
     echo "  --parameters <filepath>. Path to JSON file with protocol parameters."
+    echo "  [--node-ip | -A <int>]. Node rpc ip address, default is $node_ip."
+    echo "  [--node-port | -P <int>]. Node rpc port, default is $node_port."
     echo "  [--fitness <int>]. Protocol activation fitness, default value is $fitness."
     echo "  [--base-chain <babylonnet | carthagenet>]. Define base chain for your private"
     echo "    blockchain. Default is 'carthagenet'."
 }
 
 fitness="25"
+node_ip="localhost"
+node_port="8732"
 
 if [[ $# -eq 0 || $1 == "--help" ]]; then
     usage
