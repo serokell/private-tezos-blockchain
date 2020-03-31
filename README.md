@@ -191,6 +191,8 @@ for possible error messages.
 Once the protocol is activated, you can play with the new chain.
 For example, you can transfer some tokens from one account to another using `tezos-client`.
 
+You can either use the tezos-client which is located inside this example's Docker container or obtain one from https://github.com/serokell/tezos-packaging
+
 We will use the alias 'alice' to refer to the bootstrap_accounts entry with these values:
 ```sh
 Hash: tz1akcPmG1Kyz2jXpS4RvVJ8uWr7tsiT9i6A
