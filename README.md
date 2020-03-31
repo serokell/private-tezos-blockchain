@@ -143,6 +143,7 @@ where my-parameters.json is the file you have just edited. The <container_name> 
 The last step is to run the activation script for the running docker container:
 ```sh
 docker exec <container_name> ./scripts/activate-protocol.sh \
+  -A <container_ip> -P 8732
   --base-dir /base-dir --tezos-client /base-dir/tezos-client \
   --parameters /parameters.json
 ```
