@@ -79,6 +79,38 @@ If run sucessfully, this script will output something similar to the following:
       Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
       Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
 ```
+
+### Running two bakers on the once machine using Docker
+
+To run the first baker node inside the docker container do the following:
+```sh
+docker run --expose 8733 -p 8732:8732 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
+  -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet
+```
+This script will print baker's address and publick key which runs on this node.
+Apart from that it will print container ip-address using the following format:
+```sh
+Container IP: 172.17.0.2
+```
+
+We will use this IP as a peer for the second node.
+
+Now in order to run the second baker node inside the docker container do the following:
+```
+docker run --expose 8734 -p 8734:8734 -v ubuntu-tezos-volume-1:/base-dir \
+  -i -t ubuntu-tezos start-baker --net-addr-port 8734 --base-chain carthagenet --peer 172.17.0.2:8733
+```
+
+Note that nodes should use different docker volumes. Also, they shouldn't use same host
+ports (otherwise, you'll get docker error).
+
+If the nodes are able to see each other you'll see the following line in the node output:
+```sh
+p2p.maintenance: Too few connections (1)
+```
+
+Which means that node now has one peer.
+
 ### Activating the procotol and starting the blockchain
 The Public Key from the previous step will now need to be pasted into a JSON paramter file.
 
