@@ -8,11 +8,11 @@ set -euo pipefail
 export TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER="Y"
 
 activate_protocol() {
-    "$tezos_client" -d "$client_dir" --block genesis activate protocol \
+    "$tezos_client" -A "$node_ip" -P "$node_port" -d "$client_dir" --block genesis activate protocol \
       "$protocol" with fitness "$fitness" and key genesis and parameters "$parameters"
 }
 bake_block() {
-    "$tezos_client" -d "$client_dir" bake for baker --minimal-timestamp
+    "$tezos_client" -A "$node_ip" -P "$node_port" -d "$client_dir" bake for baker --minimal-timestamp
 }
 
 usage() {
@@ -61,6 +61,14 @@ while true; do
             ;;
         --fitness)
             fitness="$2"
+            shift 2
+            ;;
+        --node-ip | -A)
+            node_ip="$2"
+            shift 2
+            ;;
+        --node-port | -P)
+            node_port="$2"
             shift 2
             ;;
         *)
