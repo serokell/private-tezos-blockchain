@@ -230,12 +230,8 @@ Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
 
 And transfer some tokens:
 ```sh
-$ tezos-client transfer 100 from alice to bob --burn-cap 0.257
-
-#TODO: This gives the following error message, even though the transfer seems to succeed:
-# Fatal error:
-#  transfer simulation failed
-```
+$ tezos-client --wait none transfer 100 from alice to bob --burn-cap 0.257
+``
 
 After this, `bob` will have some tokens:
 ```sh
