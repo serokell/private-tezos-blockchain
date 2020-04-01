@@ -110,8 +110,9 @@ cd "$base_dir"
 patch_file="tezos.patch"
 cp "../$patch_template" "$patch_file"
 sed -i "s/genesis_key_placeholder/$genesis_key/g" "$patch_file"
-git clone --single-branch --branch master https://gitlab.com/tezos/tezos.git --depth 1
+git clone --single-branch --branch master https://gitlab.com/tezos/tezos.git
 cd tezos
+git checkout 6a73607c30c6ad50d495c8d79acf8553be341565
 git apply "../$patch_file"
 
 opam init --bare --disable-sandboxing
