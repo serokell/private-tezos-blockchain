@@ -75,6 +75,17 @@ The --expose parameter makes a port available outside of Docker, while the -p pa
 
 Port `8732` is used as an node rpc port and exposed by the docker image by default.
 
+In this command and some that follow, you will see a warning:
+```sh
+Warning:
+  Failed to acquire the protocol version from the node
+  Rpc request failed:
+     - meth: GET
+     - uri: http://localhost:8732/chains/main/blocks/head/protocols
+     - error: Unable to connect to the node: "Unix.Unix_error(Unix.ECONNREFUSED, "connect", "")"
+```
+These warnings can be ignored for now, as all the required components have not yet been started.
+
 This script will print the baker's IP address and public key, both of which will be used in the following steps.
 First your should see the IP address:
 ```sh
@@ -95,7 +106,7 @@ Leave this terminal running and open another.
 In this second terminal window, enter:
 
 ```sh
-sudo docker run -v ubuntu-tezos-volume-1:/base-dir -i \
+docker run -v ubuntu-tezos-volume-1:/base-dir -i \
   -t ubuntu-tezos build-binaries --base-chain carthagenet
 ```
 
@@ -103,7 +114,7 @@ sudo docker run -v ubuntu-tezos-volume-1:/base-dir -i \
 
 And now run the 2nd baker:
 ```sh
-sudo docker run --expose 8734 -p 8734:8734 -v ubuntu-tezos-volume-1:/base-dir \
+docker run --expose 8734 -p 8734:8734 -v ubuntu-tezos-volume-1:/base-dir \
   -i -t ubuntu-tezos start-baker --net-addr-port 8734 --base-chain carthagenet --peer 172.17.0.2:8733
 ```
 
@@ -125,7 +136,7 @@ and:
       Hash: tz1Q7nseDTSnwn6eQeEsDyjk8XUargML5cmj
       Public Key: edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs
       Secret Key: unencrypted:edsk3v5XVo6n8ueSiFeRfLoB7FPcmJT74yRs8tFn8hEQs6HvkcP6f1
-`
+```
 The public key from this output will be used in the next step
 
 ### Activating the procotol and starting the blockchain
@@ -249,7 +260,7 @@ Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
 $ docker exec <container_name> /base-dir/tezos-client \
   --addr <container_ip> --port 8732 \
   --wait none transfer 100 from alice to bob --burn-cap 0.257
-``
+```
 
 After this, `bob` will have some tokens:
 ```sh
@@ -259,6 +270,7 @@ $ docker exec <container_name> /base-dir/tezos-client \
 
 100.0 ꜩ
 ```
+Note: You might have to wait a minute and rerun the previous command if you don't see the updated balance.
 
 ### Additional notes
 
@@ -366,7 +378,7 @@ To stop the bakers, do the following:
 
 To see information about the bakers, run:
 
-```
+```sh
 tezos-client -d base-dir/client show address baker
 tezos-client -d base-dir-b/client show address baker
 # add -S to see secret key as well
@@ -445,13 +457,15 @@ Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
 And transfer some tokens:
 ```sh
 $ tezos-client --wait none transfer 100 from alice to bob --burn-cap 0.257
-``
+```
 
 After this, `bob` will have some tokens:
 ```sh
 $ tezos-client get balance for bob
 100.0 ꜩ
 ```
+
+Note: You might have to wait a minute and rerun the previous command if you don't see the updated balance.
 
 ## Creating a peer-to-peer network
 
