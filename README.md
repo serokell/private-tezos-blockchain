@@ -114,12 +114,26 @@ p2p.maintenance: Too few connections (1)
 
 This means that each node now has one peer.
 
+Assuming the calls to start-baker.sh were successful, the output from each should have something like:
+```sh
+      Hash: tz1SJNRNLwACDSLDLk249vFnZjZyV9MVNKEg
+      Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
+      Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
+```
+and:
+```
+      Hash: tz1Q7nseDTSnwn6eQeEsDyjk8XUargML5cmj
+      Public Key: edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs
+      Secret Key: unencrypted:edsk3v5XVo6n8ueSiFeRfLoB7FPcmJT74yRs8tFn8hEQs6HvkcP6f1
+`
+The public key from this output will be used in the next step
 
 ### Activating the procotol and starting the blockchain
 Leave the second shell running as well, and open a third session. In the new shell, first get the names of the two containers that are now running via the command:
 ```sh
 docker ps
 ```
+#### Modifying the parameter files
 We also need to gather the public keys created from the two bakers started in the previous steps.
 These public keys will need to be pasted into a JSON parameter file.
 
@@ -147,6 +161,7 @@ e.g. paste entries like this into the bootstrap_accounts section:
 ```
 The exisiting bootstrap accounts should remain in the file, and will be used later in this example.
 
+#### Copying the edited parameter files to Docker
 Copy the edited parameters file to the two docker filesystems:
 ```sh
 docker cp my-parameters.json <container_name>:/parameters.json
@@ -154,6 +169,7 @@ docker cp my-parameters.json <container_name_1>:/parameters.json
 ```
 where my-parameters.json is the file you have just edited. <container_name> and <container_name_1> can be retrieved by the command 'docker ps'
 
+#### Starting the blockchain
 The last step is to run the activation script for the running docker containers.
 For this step, choose the container name corresponding to the first container we created (select the one shown to have been started earliest)
 ```sh
@@ -164,12 +180,6 @@ docker exec <container_name> ./scripts/activate-protocol.sh \
 ```
 where <container_ip> is the IP address displayed when we ran the first baker
 
-```sh
-#TODO: This causes the following error, but seems to succeed anyway:
-# Error:
-#  Unrecognized command.
-```
-
 If you want to browse the file system inside your Docker container, you can run the command:
 ```sh
 docker exec -it <container_name> bash
@@ -179,19 +189,19 @@ This will run an interactive shell session inside your running node container.
 ### Using the private chain
 Before continuing, you can verify things are working properly by entering into your browser:
 ```sh
-http://localhost:8732/chains/main/blocks/head
+http://<conainer_ip>:8732/chains/main/blocks/head
 ```
 You should see some valid JSON being returned. If things are not working correctly, you can look at the contents of the files
 ```sh
 base-dir/baker.log
 base-dir/node.log
 ```
-for possible error messages.
+inside the Docker file system for possible error messages.
 
 Once the protocol is activated, you can play with the new chain.
 For example, you can transfer some tokens from one account to another using `tezos-client`.
 
-You can either use the tezos-client which is located inside this example's Docker container or obtain one from https://github.com/serokell/tezos-packaging
+You can either use the tezos-client which is located inside this example's Docker container or obtain one from https://github.com/serokell/tezos-packaging The following instructions assume you are using the tezos-client inside the docker container.
 
 We will use the alias 'alice' to refer to the bootstrap_accounts entry with these values:
 ```sh
@@ -201,7 +211,9 @@ Secret Key: unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
 ```
 Enter the following command:
 ```sh
-$ tezos-client import secret key alice unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
+$ docker exec <container_name>/base-dir/tezos-client \
+  --addr <container_ip> --port 8732 \
+  import secret key alice unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
 ```
 If the alias is already defined, you will get the following error (which you can ignore as long as the secret key matches the entry in bootstrap_accounts):
 
@@ -222,20 +234,29 @@ to `build-patched-binaries.sh` and `start-baker.sh` scripts.
 
 Let's generate a new account named `bob`:
 ```sh
-$ tezos-client gen keys bob
-$ tezos-client show address bob
+$ docker exec <container_name> /base-dir/tezos-client \
+  --addr <container_ip> --port 8732 \
+  gen keys bob
+
+$ docker exec <container_name> /base-dir/tezos-client \
+  --addr <container_ip> --port 8732 \
+show address bob
+
 Hash: tz1iW2e1i355D57GSuBHw928mJkuCwcZZWmk
 Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
 ```
-
-And transfer some tokens:
 ```sh
-$ tezos-client --wait none transfer 100 from alice to bob --burn-cap 0.257
+$ docker exec <container_name> /base-dir/tezos-client \
+  --addr <container_ip> --port 8732 \
+  --wait none transfer 100 from alice to bob --burn-cap 0.257
 ``
 
 After this, `bob` will have some tokens:
 ```sh
-$ tezos-client get balance for bob
+$ docker exec <container_name> /base-dir/tezos-client \
+  --addr <container_ip> --port 8732 \
+  get balance for bob
+
 100.0 ꜩ
 ```
 
@@ -283,6 +304,8 @@ the following command:
 ./scripts/build-patched-binaries.sh --base-dir base-dir --patch-template ./patches/patch_template.patch \
   --base-chain carthagenet
 ```
+(you can reply N to the questions about opam)
+
 After running this command, the new genesis public-key will be stored in a `base-dir/genesis_key.txt` file,
 so that you can share this key with other users of your private blockchain.
 Apart from file with the new genesis public key, the `base-dir` directory will also contain
@@ -356,53 +379,10 @@ After building and running the baker on the dictator machine, the dictator shoul
 and bake the first block by running the [`activate-protocol.sh`](./scripts/activate-protocol.sh) shell script.
 After activating the new protocol and baking the first block, the private blockchain will start.
 
-```sh
-#TODO: We can probably combine the following section with the similar section in the Docker example...
-```
-Assuming the calls to start-baker.sh were successful, the output should have been something like:
+#### Editing the JSON parameter file(s)
+See [this section](#modifying-the-parameter-files) in the Docker instructions for the steps required to modify the JSON parameters file.  The instructions are the same as for the non-Docker example
 
-```sh
-      Hash: tz1SJNRNLwACDSLDLk249vFnZjZyV9MVNKEg
-      Public Key: edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz
-      Secret Key: unencrypted:edsk3mXNLyaNXdFv6Qjcxmfed3eJ7kSzJwgCjSNh4KTTpwRRLPMSpY
-```
-and:
-```
-      Hash: tz1Q7nseDTSnwn6eQeEsDyjk8XUargML5cmj
-      Public Key: edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs
-      Secret Key: unencrypted:edsk3v5XVo6n8ueSiFeRfLoB7FPcmJT74yRs8tFn8hEQs6HvkcP6f1
-```
-
-These Public Key values will need to be pasted into a JSON paramter file that we will provide when launching the blockchain
-
-Two sample files are provided, depending on the version of the network you plan to run:
-* [babylonnet](./parameters/parameters_babylonnet.json)
-* [carthagenet](./parameters/parameters_carthagenet.json)
-
-In these files, `bootstrap_accounts` has information about account public keys
-that have access to tokens (4M of tez in these example files). Note
-that all bakers should have some tokens, thus, we need to add the public key for the baker just created into `bootstrap_accounts`.
-
-Starting with the appropriate sample file for the network version you plan to run,
-modify it by adding an entry in the bootstrap_accounts section for the public keys provided in the previous step.
-
-e.g. paste an entry like this into the bootstrap_accounts section:
-```sh
-    [
-      "edpkvRTXYRCxCbWs4GF1shMxCab9nF3iNimPqqb2esiP5WyjAhT1dz",
-      "4000000000000"
-    ],
-    [
-      "edpkvJ7DgGFNdpTC7s8HtG8AuccSf7KVQtCK8kcx2Jg6US9ehNv7Zs",
-      "4000000000000"
-    ]
-```
-
-The exisiting bootstrap accounts should remain in the file, and will be used later in this example.
-In general recommend having some more bootstrap accounts that are not bakers, because
-bakers run out of tokens before they begin to get rewarded for baking. In such situation
-the chain can stop.
-
+### Starting the blockchain
 Now the blockchain is ready to be launched. In order to launch it, the dictator should run the following:
 ```sh
 ./scripts/activate-protocol.sh --base-dir base-dir --tezos-client \
@@ -411,7 +391,67 @@ Now the blockchain is ready to be launched. In order to launch it, the dictator 
 where my-parameters.json is the file you have just edited.
 
 ### Trying it out
-See [these steps](#using-the-private-chain) in the Docker section.  They should work both for docker and non-docker installations.
+Before continuing, you can verify things are working properly by entering into your browser:
+```sh
+http://localhost:8732/chains/main/blocks/head
+```
+You should see some valid JSON being returned. If things are not working correctly, you can look at the contents of the files
+```sh
+base-dir/baker.log
+base-dir/node.log
+```
+for possible error messages.
+
+Once the protocol is activated, you can play with the new chain.
+For example, you can transfer some tokens from one account to another using `tezos-client`.
+
+You can either use the tezos-client which is located inside this example's Docker container or obtain one from https://github.com/serokell/tezos-packaging
+
+We will use the alias 'alice' to refer to the bootstrap_accounts entry with these values:
+```sh
+Hash: tz1akcPmG1Kyz2jXpS4RvVJ8uWr7tsiT9i6A
+Public Key: edpktezaD1wnUa5pT2pvj1JGHNey18WGhPc9fk9bbppD33KNQ2vH8R
+Secret Key: unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
+```
+Enter the following command:
+```sh
+$ tezos-client import secret key alice unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
+```
+If the alias is already defined, you will get the following error (which you can ignore as long as the secret key matches the entry in bootstrap_accounts):
+
+```sh
+Error:
+  The secret_key alias alice already exists.
+    The current value is unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG.
+    Use --force to update
+```
+If the secret key does not match, you can re-run the previous command adding --force onto the end
+
+Account `alice` has 4m of tez available.
+
+The secret keys used here are unencrypted, which is unsafe in general but used to for simplicity of the examples.
+Consider not using them if you care about privacy (even in a private blockchain without real money).
+In order to encrypt bakers and genesis secret keys, you can provide an `--encrypted` flag
+to `build-patched-binaries.sh` and `start-baker.sh` scripts.
+
+Let's generate a new account named `bob`:
+```sh
+$ tezos-client gen keys bob
+$ tezos-client show address bob
+Hash: tz1iW2e1i355D57GSuBHw928mJkuCwcZZWmk
+Public Key: edpku66KahHGQsthyuHmsYm829xnH6jWXiapkyaNf1HspXx5VKKPSu
+```
+
+And transfer some tokens:
+```sh
+$ tezos-client --wait none transfer 100 from alice to bob --burn-cap 0.257
+``
+
+After this, `bob` will have some tokens:
+```sh
+$ tezos-client get balance for bob
+100.0 ꜩ
+```
 
 ## Creating a peer-to-peer network
 
