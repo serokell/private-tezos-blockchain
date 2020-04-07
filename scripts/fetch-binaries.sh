@@ -10,8 +10,8 @@ export TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER="Y"
 gen_genesis_key() {
     # download tezos-client if not presented to generate new public key
     if [[ ! -f $base_dir/tezos-client ]]; then
-        wget https://github.com/serokell/tezos-packaging/releases/download/202001141534/tezos-client-babylonnet-b8731913 \
-        -O "$base_dir"/tezos-client
+        wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-client \
+        -P "$base_dir/"
     fi
     tezos_client="$base_dir/tezos-client"
     chmod +x "$tezos_client"
@@ -35,7 +35,6 @@ usage() {
     echo "OPTIONS:"
     echo "  --base-dir <filepath>. Base directory for compiled binaries"
     echo "    and genesis account."
-    echo "  --patch-template. Template patch file."
     echo "  [--genesis-key <public-key>]. Genesis public key used for binary compiling."
     echo "    If not provided, this script will generate a new genesis public key."
     echo "  [--base-chain <babylonnet | carthagenet>]. Define base chain for your private"
@@ -51,7 +50,6 @@ fi
 encrypted_flag=false
 genesis_key=""
 base_chain="carthagenet"
-patch_template="./patch_template.patch"
 while true; do
     if [[ $# -eq 0 ]]; then
         break
@@ -73,10 +71,6 @@ while true; do
             base_chain="$2"
             shift 2
             ;;
-        --patch-template )
-            patch_template="$2"
-            shift 2
-            ;;
         *)
             echo "Unexpected option \"$1\"."
             usage
@@ -93,46 +87,77 @@ if [[ -z ${base_dir:-} ]]; then
     exit_flag="true"
 fi
 
-if [[ -z ${patch_template:-} ]]; then
-    echo "\"--patch-template\" wasn't provided."
-    exit_flag="true"
-fi
-
 [[ $exit_flag == "true" ]] && exit 1
 
 mkdir -p "$base_dir"
 client_dir="$base_dir/client"
 mkdir -p "$client_dir"
+node_dir="$base_dir/node"
+mkdir -p "$node_dir"
 
 [[ -z $genesis_key ]] && gen_genesis_key
 
-cd "$base_dir"
-patch_file="tezos.patch"
-cp "../$patch_template" "$patch_file"
-sed -i "s/genesis_key_placeholder/$genesis_key/g" "$patch_file"
-git clone --single-branch --branch master https://gitlab.com/tezos/tezos.git --depth 1
-cd tezos
-git apply "../$patch_file"
-
-opam init --bare --disable-sandboxing
-make build-deps && eval "$(opam env)" && make
-chmod +x tezos-*
-cp tezos-client ../
-cp tezos-node ../
+wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-node \
+     -P "$base_dir/"
 case "$base_chain" in
     babylonnet )
-        cp tezos-endorser-005-* ../
-        cp tezos-baker-005-* ../
+        wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-endorser-005-PsBabyM1 \
+             -P "$base_dir/"
+        wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-baker-005-PsBabyM1 \
+             -P "$base_dir/"
+        cat > "$node_dir/config.json" <<- EOM
+{
+  "p2p": {},
+  "network": {
+    "genesis": {
+      "timestamp": "2019-09-27T07:43:32Z",
+      "block": "BLockGenesisGenesisGenesisGenesisGenesisd1f7bcGMoXy",
+      "protocol": "PtBMwNZT94N7gXKw4i273CKcSaBrrBnqnt3RATExNKr9KNX2USV"
+    },
+    "genesis_parameters": {
+      "values": {
+        "genesis_pubkey": "$genesis_key"
+      }
+    },
+    "chain_name": "TEZOS_ALPHANET_BABYLON_2019-09-27T07:43:32Z",
+    "old_chain_name": "TEZOS_ALPHANET_BABYLON_2019-09-27T07:43:32Z",
+    "incompatible_chain_name": "INCOMPATIBLE",
+    "sandboxed_chain_name": "SANDBOXED_TEZOS",
+    "default_bootstrap_peers": []
+  }
+}
+EOM
         ;;
     carthagenet )
-        cp tezos-endorser-006-* ../
-        cp tezos-baker-006-* ../
+        wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-endorser-006-PsCARTHA \
+             -P "$base_dir/"
+        wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-baker-006-PsCARTHA \
+             -P "$base_dir/"
+        cat > "$node_dir/config.json" <<- EOM
+{
+  "p2p": {},
+  "network": {
+    "genesis": {
+      "timestamp": "2019-11-28T13:02:13Z",
+      "block": "BLockGenesisGenesisGenesisGenesisGenesisd6f5afWyME7",
+      "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex"
+    },
+    "genesis_parameters": {
+      "values": {
+        "genesis_pubkey": "$genesis_key"
+      }
+    },
+    "chain_name": "TEZOS_ALPHANET_CARTHAGE_2019-11-28T13:02:13Z",
+    "old_chain_name": "TEZOS_ALPHANET_CARTHAGE_2019-11-28T13:02:13Z",
+    "incompatible_chain_name": "INCOMPATIBLE",
+    "sandboxed_chain_name": "SANDBOXED_TEZOS",
+    "default_bootstrap_peers": []
+  }
+}
+EOM
         ;;
     *)
         echo "$base_chain not supported. Only 'babylonnet' and 'carthagenet' are supported."
         exit 1
 esac
-
-cd ..
-rm -rf tezos
-rm "$patch_file"
+chmod +x "$base_dir"/tezos-*
