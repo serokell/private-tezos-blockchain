@@ -11,8 +11,8 @@ This doc will describe how to run your own private Tezos blockchain.
 ## General overview
 
 In order to run a private blockchain, you should do the following:
-* Generate new genesis key, and build patched binaries
-(using `build-patched-binaries.sh` script).
+* Generate new genesis key, and fetch binaries
+(using `fetch-binaries.sh` script).
 * Run a bunch of nodes and bakers, at least two, but the more the better
 (using `start-baker.sh` script).
 * Customize chain parameters to your taste and activate the procotol
@@ -29,30 +29,8 @@ There are two ways to use these scripts:
 
 ### Running scripts outside docker prerequisites
 
-Since running a private blockchain requires compiling patched Tezos binaries from
-scratch, you will have to install the following dependencies:
-```
-rsync git m4 build-essential patch unzip bubblewrap wget pkg-config
-libgmp-dev libev-dev libhidapi-dev which opam
-```
-These dependencies are also described [here](https://tezos.gitlab.io/introduction/howtoget.html#build-from-sources).
-
-In order to install them using a Debian or RedHat-based distro, run one of the following
-commands:
-```sh
-# Debian and apt
-sudo apt update && sudo apt install rsync git m4 build-essential patch unzip \
-     bubblewrap wget pkg-config libgmp-dev libev-dev libhidapi-dev which
-# RedHat and yum
-sudo yum update && sudo yum install rsync git m4 patch unzip make \
-     bubblewrap wget gmp-devel libev-devel perl-Pod-Html pkgconfig hidapi-devel which
-```
-In order to install `opam`, run the following commands:
-```sh
-wget https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-linux
-sudo cp opam-2.0.3-x86_64-linux /usr/local/bin/opam
-sudo chmod a+x /usr/local/bin/opam
-```
+We will use statically built Tezos binaries from [tezos-packaging](https://github.com/serokell/tezos-packaging),
+you'll need Linux to be able to run them, also you'll need `wget`.
 
 ### Running scripts inside docker prerequisites
 
@@ -71,29 +49,25 @@ docker volume create ubuntu-tezos-volume
 ```
 
 This docker image has [`./scripts/docker.sh`](./scripts/docker.sh) as an entrypoint.
-This script basically wraps [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
+This script basically wraps [`fetch-binaries.sh`](./scripts/fetch-binaries.sh)
 and [`start-baker.sh`](./scripts/start-baker.sh) scripts providing required paths
 for tezos-binaries stored inside the docker volume.
 
-## Generating new genesis public key and building patched binaries
+## Generating new genesis public key and fetching binaries
 
 ### Without docker
 
 First step for running the private blockchain is generating a new genesis public key and
-building patched Tezos binaries. [`build-patched-binaries.sh`](./scripts/build-patched-binaries.sh)
-shell script will build these patched binaries.
-
-Note that you may have to adjust this script or [`patch_template.patch`](./patches/patch_template.patch)
-for your needs, e.g. genesis public keys can be moved from
-`src/proto_genesis_{babylonnet, carthagenet}/lib_protocol/data.ml` to another files.
+fetching Tezos binaries. [`fetch-binaries.sh`](./scripts/fetch-binaries.sh)
+shell script will fetch statically built binaries and create a tezos-node config file
+containing a custom genesis key. This custom genesis key will be used by the script `start-baker.sh`.
 
 There are two ways to use this script:
 * You are the one who initiates the new private blockchain creation (the so-called dictator).
 Thus, you'll have to generate a new genesis public key. In order to do that, you can run
 the following command:
 ```sh
-./scripts/build-patched-binaries.sh --base-dir dictator --patch-template ./patches/patch_template.patch \
-  --base-chain carthagenet
+./scripts/fetch-binaries.sh --base-dir dictator --base-chain carthagenet
 ```
 After running this command, the new genesis public-key will be stored in a `dictator/genesis_key.txt` file,
 so that you can share this key with other users of your private blockchain.
@@ -109,7 +83,7 @@ To get information about the `genesis` account, run:
 ```
 * Someone provided you a genesis public key. In this case, you should run the following command:
 ```sh
-./scripts/build-patched-binaries.sh --base-dir user --genesis-key <provided key> --base-chain carthagenet
+./scripts/fetch-binaries.sh --base-dir user --genesis-key <provided key> --base-chain carthagenet
 ```
 After running this command, the `user` directory will contain patched Tezos binaries.
 
@@ -118,12 +92,12 @@ After running this command, the `user` directory will contain patched Tezos bina
 To generate patched binaries do the following:
 ```
 docker run -v ubuntu-tezos-volume:/base-dir -i \
-  -t ubuntu-tezos build-binaries --base-chain carthagenet
+  -t ubuntu-tezos fetch-binaries --base-chain carthagenet
 ```
 
 In case someone provided you a genesis public key:
 ```
-docker run -v ubuntu-tezos-volume:/base-dir -i -t ubuntu-tezos build-binaries \
+docker run -v ubuntu-tezos-volume:/base-dir -i -t ubuntu-tezos fetch-binaries \
   --genesis-key <provided key> --base-chain carthagenet
 ```
 
@@ -142,9 +116,8 @@ Here is an example of script usage:
 ```sh
 ./scripts/start-baker.sh --base-dir baker \
   --tezos-client baker/tezos-client --tezos-node baker/tezos-node \
-  --tezos-baker baker/tezos-baker-005-PsBabyM1 --tezos-endorser baker/tezos-endorser-005-PsBabyM1 \
-  --net-addr 10.147.19.192:8732
-  --peer 10.147.19.49:8732 --base-chain carthagenet
+  --tezos-baker baker/tezos-baker-006-PsCARTHA --tezos-endorser baker/tezos-endorser-006-PsCARTHA \
+  --net-addr 10.147.19.192:8732 --peer 10.147.19.49:8732
 ```
 Note that you should provide at least one peer to make the node communicate with the chain (e.g. you
 can provide address of the dictator node).
@@ -176,7 +149,7 @@ To run baker inside docker container run the following:
 # Note that here you should specify the port using which your node can be
 # accessed, thus you also need to expose and publish this port for docker.
 docker run --expose 8733 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
-  -i -t ubuntu-tezos start-baker --net-addr-port 8733 --base-chain carthagenet \
+  -i -t ubuntu-tezos start-baker --net-addr-port 8733 \
   --peer 10.147.19.104:8733
 ```
 
@@ -189,7 +162,7 @@ Consider publishing it as well in case you want to interact with this node over 
 
 ### Without docker
 
-After building and running the baker on the dictator machine, the dictator should activate protocol
+After fetching binaries and running the baker on the dictator machine, the dictator should activate protocol
 and bake the first block. In order to do that, one should use
 [`activate-protocol.sh`](./scripts/activate-protocol.sh) shell script.
 It will activate the new protocol and bake the first block, after that the private blockchain will
@@ -198,11 +171,11 @@ actually start.
 Let's suppose dictator built binaries and started baker using `dictator` as a `base-dir`.
 E.g. the following commands were executed:
 ```sh
-./scripts/build-patched-binaries.sh --base-dir dictator --patch-template ./patches/patch_template.patch
+./scripts/fetch-binaries.sh --base-dir dictator
 ./scripts/start-baker.sh --base-dir dictator \
   --tezos-client dictator/tezos-client --tezos-node dictator/tezos-node \
-  --tezos-baker dictator/tezos-baker-005-PsBabyM1 --tezos-endorser dictator/tezos-endorser-005-PsBabyM1
-  --net-addr 10.147.19.192:8732 --base-chain carthagenet
+  --tezos-baker dictator/tezos-baker-006-PsCARTHA --tezos-endorser dictator/tezos-endorser-006-PsCARTHA
+  --net-addr 10.147.19.192:8732
 ```
 Now the blockchain is ready to be launched. In order to launch it, the dictator should run the following:
 ```sh
@@ -254,7 +227,7 @@ $ tezos-client import secret key alice unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW
 However, unencrypted secret key usage is unsafe and used to provide more simplicity in this manual.
 Consider not using them if you care about privacy (even in a private blockchain without real money).
 In order to encrypt bakers and genesis secret keys, you can provide an `--encrypted` flag
-to `build-patched-binaries.sh` and `start-baker.sh` scripts.
+to `fetch-binaries.sh` and `start-baker.sh` scripts.
 
 Let's generate a new account named `bob`:
 ```sh
