@@ -8,17 +8,16 @@ set -euo pipefail
 script_args=()
 
 usage () {
-    echo "This script is used to wrap building and baker starting scripts"
+    echo "This script is used to wrap binaries fetching and baker starting scripts"
     echo "inside docker container."
     echo "COMMANDS:"
-    echo "  build-binaries [--base-chain <babylonnet | carthagenet>]"
+    echo "  fetch-binaries [--base-chain <babylonnet | carthagenet>]"
     echo "                 [--genesis-key <public-key>]"
     echo "                 [--encrypted]"
-    echo "    Call 'build-patched-binaries.sh' script inside docker container."
+    echo "    Call 'fetch-binaries.sh' script inside docker container."
     echo "    Produced binaries will be stored in '/base-dir' directory inside"
     echo "    docker container."
     echo "  start-baker --net-addr-port <port>"
-    echo "              [--base-chain <babylonnet | carthagenet>]"
     echo "              [--peer <net-addr>]"
     echo "    Call 'start-baker.sh' script inside docker container."
     echo "    Will use binaries from '/base-dir' directory and 'localhost' as '--net-addr'"
@@ -30,8 +29,8 @@ if [[ $# -eq 0 || $1 == "--help" ]]; then
 fi
 
 case "$1" in
-    build-binaries )
-        script="build"
+    fetch-binaries )
+        script="fetch"
         ;;
     start-baker )
         script="start"
@@ -67,9 +66,9 @@ container_ip="$(hostname -i |  tr -d '[:space:]')"
 echo "Container IP: $container_ip"
 
 case "$script" in
-    build )
-        "./scripts/build-patched-binaries.sh" "--base-dir" "/base-dir" \
-          "--patch-template" "/patches/patch_template.patch" "${script_args[@]}"
+    fetch )
+        "./scripts/fetch-binaries.sh" "--base-dir" "/base-dir" \
+          "${script_args[@]}"
         ;;
     start )
         "./scripts/start-baker.sh" "--base-dir" "/base-dir" "--tezos-client" "/base-dir/tezos-client" \
