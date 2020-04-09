@@ -13,7 +13,7 @@ gen_node_identity() {
 }
 
 start_node() {
-    node_args=("--data-dir" "$node_dir" "--rpc-addr" "localhost:8732" "--net-addr" "$net_addr" "--no-bootstrap-peers" "--bootstrap-threshold" "1")
+    node_args=("--data-dir" "$node_dir" "--rpc-addr" "$rpc_addr" "--net-addr" "$net_addr" "--no-bootstrap-peers" "--bootstrap-threshold" "1")
     for peer in "${peers[@]:-}"; do
         node_args+=("--peer" "$peer")
     done
@@ -37,11 +37,11 @@ gen_baker_account() {
 }
 
 start_baker() {
-    (sleep 5s && "$tezos_baker" -d "$client_dir" run with local node "$node_dir" baker &>"$base_dir/baker.log") &
+    (sleep 5s && "$tezos_baker" -A "$node_ip" -P "$node_port" -d "$client_dir" run with local node "$node_dir" baker &>"$base_dir/baker.log") &
 }
 
 start_endorser() {
-    (sleep 5s && "$tezos_endorser" -d "$client_dir" run baker &>"$base_dir/endorser.log") &
+    (sleep 5s && "$tezos_endorser" -A "$node_ip" -P "$node_port" -d "$client_dir" run baker &>"$base_dir/endorser.log") &
 }
 
 usage() {
@@ -54,6 +54,7 @@ usage() {
     echo "  --tezos-node <filepath>. Path for patched tezos-node executable"
     echo "  --tezos-baker <filepath>. Path for patched tezos-baker executable"
     echo "  --tezos-endorser <filepath>. Path for patched tezos-endorser executable"
+    echo "  [--rpc-addr <rpc-addr>]. Define RPC address of the baker node, default is localhost:8732"
     echo "  --net-addr <net-addr>. Define net address of the baker node"
     echo "  [--peer <net-addr>]. Node peer address. Possible to provide"
     echo "    zero or more peers. Note, that you have to provide at least one peer"
@@ -63,6 +64,7 @@ usage() {
     echo "  [--no-background-node]. Run node in the foreground instead of background."
 }
 
+rpc_addr="localhost:8732"
 
 if [[ $# -eq 0 || $1 == "--help" ]]; then
     usage
@@ -101,6 +103,10 @@ while true; do
             ;;
         --tezos-endorser)
             tezos_endorser="$2"
+            shift 2
+            ;;
+        --rpc-addr)
+            rpc_addr="$2"
             shift 2
             ;;
         --net-addr)
@@ -171,6 +177,9 @@ node_dir="$base_dir/node"
 client_dir="$base_dir/client"
 mkdir -p "$node_dir"
 mkdir -p "$client_dir"
+
+node_ip="$(echo "$rpc_addr" | cut -f1 -d":")"
+node_port="$(echo "$rpc_addr" | cut -f2 -d":")"
 
 "$tezos_client" -d "$client_dir" show address baker || gen_baker_account
 [[ -f $node_dir/identity.json ]] || gen_node_identity
