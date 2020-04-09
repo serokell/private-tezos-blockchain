@@ -42,11 +42,23 @@ case "$1" in
 esac
 shift
 
+container_ip="$(hostname -i |  tr -d '[:space:]')"
+echo "Container IP: $container_ip"
+net_addr=$container_ip
+
 while true; do
     if [[ $# -eq 0 ]]; then
         break
     fi
     case "$1" in
+        --net-address )
+            if [[ $script != "start" ]]; then
+                echo "Unexpected option '--net-address' for $script command."
+                exit 1
+            fi
+            net_addr="$2"
+            shift 2
+            ;;
         --net-addr-port )
             if [[ $script != "start" ]]; then
                 echo "Unexpected option '--net-addr-port' for $script command."
@@ -62,9 +74,6 @@ while true; do
     esac
 done
 
-container_ip="$(hostname -i |  tr -d '[:space:]')"
-echo "Container IP: $container_ip"
-
 case "$script" in
     fetch )
         "./scripts/fetch-binaries.sh" "--base-dir" "/base-dir" \
@@ -74,7 +83,7 @@ case "$script" in
         "./scripts/start-baker.sh" "--base-dir" "/base-dir" "--tezos-client" "/base-dir/tezos-client" \
           "--tezos-node" "/base-dir/tezos-node" "--tezos-baker" "/base-dir/tezos-baker-"* \
           "--tezos-endorser" "/base-dir/tezos-endorser-"* "--no-background-node" "${script_args[@]}" \
-          "--net-addr" "$container_ip:$port" "--rpc-addr" "$container_ip:8732"
+          "--net-addr" "$net_addr:$port" "--rpc-addr" "$net_addr:8732"
         ;;
     *)
         echo "Unpexpected command \"$script\"."
