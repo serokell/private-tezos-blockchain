@@ -38,7 +38,7 @@ Run the following command:
 docker build -t ubuntu-tezos .
 ```
 
-In order to use this image you will also need two docker volumes. Run the following commands:
+The steps in this tutorial will require two docker volumes. Run the following commands:
 ```sh
 docker volume create ubuntu-tezos-volume
 docker volume create ubuntu-tezos-volume-1
@@ -70,7 +70,7 @@ To run the first, enter the following:
 docker run --expose 8733 -p 8732:8732 -p 8733:8733 -v ubuntu-tezos-volume:/base-dir \
   -i -t ubuntu-tezos start-baker --net-addr-port 8733
 ```
-The --expose parameter makes a port available outside of Docker, while the -p parameter maps local ports to Docker ports.
+The --expose parameter makes a port available outside of Docker, while the -p parameter maps host ports to Docker ports.
 
 Port `8732` is used as an node rpc port and exposed by the docker image by default.
 
@@ -102,6 +102,7 @@ You will also see some output containing the public key:
 At this point, you should also see 'Too few connections (0)' being printed repeatedly on the terminal.
 Leave this terminal running and open another.
 
+### Running the second baker
 In this second terminal window, enter:
 
 ```sh
