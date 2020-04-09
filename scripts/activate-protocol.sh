@@ -8,11 +8,11 @@ set -euo pipefail
 export TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER="Y"
 
 activate_protocol() {
-    "$tezos_client" -d "$client_dir" --block genesis activate protocol \
+    "$tezos_client" -A "$node_ip" -P "$node_port" -d "$client_dir" --block genesis activate protocol \
       "$protocol" with fitness "$fitness" and key genesis and parameters "$parameters"
 }
 bake_block() {
-    "$tezos_client" -d "$client_dir" bake for baker --minimal-timestamp
+    "$tezos_client" -A "$node_ip" -P "$node_port" -d "$client_dir" bake for baker --minimal-timestamp
 }
 
 usage() {
@@ -22,12 +22,16 @@ usage() {
     echo "    data."
     echo "  --tezos-client <filepath>. Path for patched tezos-client executable"
     echo "  --parameters <filepath>. Path to JSON file with protocol parameters."
+    echo "  [--node-ip | -A <int>]. Node rpc ip address, default is $node_ip."
+    echo "  [--node-port | -P <int>]. Node rpc port, default is $node_port."
     echo "  [--fitness <int>]. Protocol activation fitness, default value is $fitness."
     echo "  [--base-chain <babylonnet | carthagenet>]. Define base chain for your private"
     echo "    blockchain. Default is 'carthagenet'."
 }
 
 fitness="25"
+node_ip="localhost"
+node_port="8732"
 
 if [[ $# -eq 0 || $1 == "--help" ]]; then
     usage
@@ -61,6 +65,14 @@ while true; do
             ;;
         --fitness)
             fitness="$2"
+            shift 2
+            ;;
+        --node-ip | -A)
+            node_ip="$2"
+            shift 2
+            ;;
+        --node-port | -P)
+            node_port="$2"
             shift 2
             ;;
         *)
