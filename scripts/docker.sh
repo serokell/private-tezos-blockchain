@@ -62,6 +62,9 @@ while true; do
     esac
 done
 
+container_ip="$(hostname -i |  tr -d '[:space:]')"
+echo "Container IP: $container_ip"
+
 case "$script" in
     fetch )
         "./scripts/fetch-binaries.sh" "--base-dir" "/base-dir" \
@@ -71,7 +74,7 @@ case "$script" in
         "./scripts/start-baker.sh" "--base-dir" "/base-dir" "--tezos-client" "/base-dir/tezos-client" \
           "--tezos-node" "/base-dir/tezos-node" "--tezos-baker" "/base-dir/tezos-baker-"* \
           "--tezos-endorser" "/base-dir/tezos-endorser-"* "--no-background-node" "${script_args[@]}" \
-          "--net-addr" "localhost:$port"
+          "--net-addr" "$container_ip:$port" "--rpc-addr" "$container_ip:8732"
         ;;
     *)
         echo "Unpexpected command \"$script\"."
