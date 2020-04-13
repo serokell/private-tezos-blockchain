@@ -17,6 +17,8 @@ start_node() {
     for peer in "${peers[@]:-}"; do
         node_args+=("--peer" "$peer")
     done
+    echo "running tezos node with args: "
+    echo ${node_args[@]}
     if [[ $background_flag == "false" ]]; then
         "$tezos_node" run "${node_args[@]}"
     else
