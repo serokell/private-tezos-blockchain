@@ -17,8 +17,12 @@ usage () {
     echo "    Call 'fetch-binaries.sh' script inside docker container."
     echo "    Produced binaries will be stored in '/base-dir' directory inside"
     echo "    docker container."
-    echo "  start-baker --net-addr-port <port>"
-    echo "              [--peer <net-addr>]"
+    echo "  start-baker"
+    echo "      [--net-address <address>]"
+    echo "       --net-addr-port <port>"
+    echo "      [--rpc-address <address>]"
+    echo "      [--rpc-addr-port <port>]"
+    echo "      [--peer <net-addr>]"
     echo "    Call 'start-baker.sh' script inside docker container."
     echo "    Will use binaries from '/base-dir' directory and 'localhost' as '--net-addr'"
 }
@@ -44,7 +48,9 @@ shift
 
 container_ip="$(hostname -i |  tr -d '[:space:]')"
 echo "Container IP: $container_ip"
-net_addr=$container_ip
+net_address=$container_ip
+rpc_address=$container_ip
+rpc_addr_port=8732
 
 while true; do
     if [[ $# -eq 0 ]]; then
@@ -56,7 +62,7 @@ while true; do
                 echo "Unexpected option '--net-address' for $script command."
                 exit 1
             fi
-            net_addr="$2"
+            net_address="$2"
             shift 2
             ;;
         --net-addr-port )
@@ -64,7 +70,23 @@ while true; do
                 echo "Unexpected option '--net-addr-port' for $script command."
                 exit 1
             fi
-            port="$2"
+            net_addr_port="$2"
+            shift 2
+            ;;
+        --rpc-address )
+            if [[ $script != "start" ]]; then
+                echo "Unexpected option '--rpc-address' for $script command."
+                exit 1
+            fi
+            rpc_address="$2"
+            shift 2
+            ;;
+        --rpc-addr-port )
+            if [[ $script != "start" ]]; then
+                echo "Unexpected option '--rpc-addr-port' for $script command."
+                exit 1
+            fi
+            rpc_addr_port="$2"
             shift 2
             ;;
         *)
@@ -73,6 +95,11 @@ while true; do
             ;;
     esac
 done
+
+if [[ -z ${net_addr_port:-} ]]; then
+    echo "\"--net-addr-port\" wasn't provided."
+    exit_flag="true"
+fi
 
 case "$script" in
     fetch )
@@ -83,7 +110,8 @@ case "$script" in
         "./scripts/start-baker.sh" "--base-dir" "/base-dir" "--tezos-client" "/base-dir/tezos-client" \
           "--tezos-node" "/base-dir/tezos-node" "--tezos-baker" "/base-dir/tezos-baker-"* \
           "--tezos-endorser" "/base-dir/tezos-endorser-"* "--no-background-node" "${script_args[@]}" \
-          "--net-addr" "$net_addr:$port" "--rpc-addr" "$net_addr:8732"
+          "--net-addr" "$net_address:$net_addr_port"
+          "--rpc-addr" "$rpc_address:$rpc_addr_port"
         ;;
     *)
         echo "Unpexpected command \"$script\"."
