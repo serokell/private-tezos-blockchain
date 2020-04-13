@@ -96,11 +96,6 @@ while true; do
     esac
 done
 
-if [[ -z ${net_addr_port:-} ]]; then
-    echo "\"--net-addr-port\" wasn't provided."
-    exit_flag="true"
-fi
-
 case "$script" in
     fetch )
         "./scripts/fetch-binaries.sh" "--base-dir" "/base-dir" \
