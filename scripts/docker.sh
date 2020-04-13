@@ -109,9 +109,10 @@ case "$script" in
     start )
         "./scripts/start-baker.sh" "--base-dir" "/base-dir" "--tezos-client" "/base-dir/tezos-client" \
           "--tezos-node" "/base-dir/tezos-node" "--tezos-baker" "/base-dir/tezos-baker-"* \
-          "--tezos-endorser" "/base-dir/tezos-endorser-"* "--no-background-node" "${script_args[@]}" \
-          "--net-addr" "$net_address:$net_addr_port"
-          "--rpc-addr" "$rpc_address:$rpc_addr_port"
+          "--tezos-endorser" "/base-dir/tezos-endorser-"* \
+          "--net-addr" "$net_address:$net_addr_port" \
+          "--rpc-addr" "$rpc_address:$rpc_addr_port" \
+          "--no-background-node" "${script_args[@]}"
         ;;
     *)
         echo "Unpexpected command \"$script\"."
