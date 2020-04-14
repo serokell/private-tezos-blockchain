@@ -214,7 +214,7 @@ Secret Key: unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
 ```
 Enter the following command:
 ```sh
-$ docker exec <container_name>/base-dir/tezos-client \
+$ docker exec <container_name> /base-dir/tezos-client \
   --addr <container_ip> --port 8732 \
   import secret key alice unencrypted:edsk2vKVH2BNwKrxJrvbRvuHnu4FW17Jrs2Uy2TzR2fxipikTJJ1aG
 ```
