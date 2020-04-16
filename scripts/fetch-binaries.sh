@@ -8,11 +8,6 @@ set -euo pipefail
 export TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER="Y"
 
 gen_genesis_key() {
-    # download tezos-client if not presented to generate new public key
-    if [[ ! -f $base_dir/tezos-client ]]; then
-        wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-client \
-        -P "$base_dir/"
-    fi
     tezos_client="$base_dir/tezos-client"
     chmod +x "$tezos_client"
     if [[ $encrypted_flag == "true" ]]; then
@@ -90,6 +85,8 @@ fi
 [[ $exit_flag == "true" ]] && exit 1
 
 mkdir -p "$base_dir"
+wget https://github.com/serokell/tezos-packaging/releases/download/202004061400/tezos-client \
+     -P "$base_dir/"
 client_dir="$base_dir/client"
 mkdir -p "$client_dir"
 node_dir="$base_dir/node"
