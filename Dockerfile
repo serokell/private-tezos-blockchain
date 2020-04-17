@@ -4,7 +4,6 @@
 FROM ubuntu
 RUN apt-get update && apt-get install -y wget netbase
 COPY ./scripts/ /scripts
-COPY ./patches/ /patches
 RUN mkdir /base-dir
 VOLUME /base-dir
 ENTRYPOINT ["/scripts/docker.sh"]
