@@ -32,34 +32,6 @@ gen_genesis_key() {
 
 }
 
-write_config() {
-    cat > "$node_dir/config.json" <<- EOM
-    {
-        "p2p": {},
-        "network": {
-            "genesis": {
-            "timestamp": "2019-11-28T13:02:13Z",
-            "block": "BLockGenesisGenesisGenesisGenesisGenesisd6f5afWyME7",
-            "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex"
-            },
-            "genesis_parameters": {
-            "values": {
-                "genesis_pubkey": "$genesis_key"
-            }
-            },
-            "chain_name": "TEZOS_ALPHANET_CARTHAGE_2019-11-28T13:02:13Z",
-            "old_chain_name": "TEZOS_ALPHANET_CARTHAGE_2019-11-28T13:02:13Z",
-            "incompatible_chain_name": "INCOMPATIBLE",
-            "sandboxed_chain_name": "SANDBOXED_TEZOS",
-            "default_bootstrap_peers": []
-        }
-    }
-    EOM
-}
-
-
-
-
 encrypted_flag=false
 while true; do
     if [[ $# -eq 0 ]]; then
