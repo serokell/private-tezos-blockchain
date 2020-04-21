@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+set -euo pipefail
+
 base_dir=/base-dir
 mkdir -p "$base_dir"
 mkdir -p "$base_dir/client"

@@ -7,6 +7,7 @@ set -euo pipefail
 
 usage () {
     echo "--write-config --genesis-key <public-key>"
+    echo "--peer <ip address>"
 }
 
 write_config() {
@@ -35,10 +36,19 @@ EOM
 }
 
 write_docker_env() {
-  echo "TBD - write file tezos-docker.env"
+    cat > "tezos-docker.env" <<- EOM
+{
+    network=host
+    volume=ubuntu-tezos-volume:/base-dir
+    peer="$peer"
+    genesis_key="$genesis_key"
+    test_ver=2
+}
+EOM
 }
 
 genesis_key=""
+peer=""
 
 while true; do
     if [[ $# -eq 0 ]]; then
@@ -47,6 +57,10 @@ while true; do
     case "$1" in
         --genesis-key)
             genesis_key="$2"
+            shift 2
+            ;;
+        --peer)
+            peer="$2"
             shift 2
             ;;
         *)
@@ -64,7 +78,12 @@ if [[ -z ${genesis_key:-} ]]; then
     exit_flag="true"
 fi
 
+if [[ -z ${peer:-} ]]; then
+    echo "\"--peer\" wasn't provided."
+    exit_flag="true"
+fi
+
 [[ $exit_flag == "true" ]] && exit 1
 
-write_config()
-write_docker_env()
+write_config
+write_docker_env
