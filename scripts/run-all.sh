@@ -18,8 +18,8 @@ start-baker() {
     --base-dir /base-dir \
     --tezos-client /base-dir/tezos-client \
     --tezos-node /base-dir/tezos-node \
-    --tezos-baker "/base-dir/tezos-baker-"* \
-    --tezos-endorser "/base-dir/tezos-endorser-"* \
+    --tezos-baker "/base-dir/tezos-baker" \
+    --tezos-endorser "/base-dir/tezos-endorser" \
     --net-addr :8732 \
     --rpc-addr :8733 \
     --no-background-node \

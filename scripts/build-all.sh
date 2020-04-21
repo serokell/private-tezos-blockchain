@@ -5,6 +5,11 @@
 
 set -euo pipefail
 
+rm -rf base-dir
+echo "fetching tezos-client for build..."
+scripts/fetch-local-client.sh
+echo "...fetch local client done.\n"
+
 echo "TBD: read network config file..."
 peer="ec2-3-12-165-223.us-east-2.compute.amazonaws.com:8733"
 
