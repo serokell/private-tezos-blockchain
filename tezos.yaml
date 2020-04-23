@@ -19,12 +19,8 @@ spec:
         image: ubuntu-tezos
         imagePullPolicy: Never
         env:
-        - name:
-          value:
-
-        command: ["
+        - name: testName1
+          value: testValue1
+        command: ["docker run -i -t ubuntu-tezos"]
         ports:
         - containerPort: 8732
-
-
-docker run --env-file tezos-docker.env -i -t ubuntu-tezos

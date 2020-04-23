@@ -6,7 +6,7 @@ FROM ubuntu
 
 RUN apt-get update && apt-get install -y wget netbase
 COPY ./scripts/ /scripts
-COPY ./*.env /
+COPY ./parameters.json /
 
 ARG base_dir=/base-dir
 RUN mkdir $base_dir
@@ -21,8 +21,15 @@ RUN wget $prefix/tezos-baker-006-PsCARTHA -P "$base_dir/"
 
 RUN chmod +x "$base_dir"/tezos-*
 
-# Args used below come from the tezos-docker.env file...
-CMD /scripts/run-all.sh --peer $peer
+CMD /scripts/start-baker.sh \
+    --base-dir /base-dir \
+    --tezos-client /base-dir/tezos-client \
+    --tezos-node /base-dir/tezos-node \
+    --tezos-baker /base-dir/tezos-baker \
+    --tezos-endorser /base-dir/tezos-endorser \
+    --net-addr :8732 \
+    --rpc-addr :8733 \
+    --no-background-node
 
 VOLUME /base-dir
 EXPOSE 8732

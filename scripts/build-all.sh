@@ -5,27 +5,25 @@
 
 set -euo pipefail
 
-rm -rf base-dir
-echo "fetching tezos-client for build..."
-scripts/fetch-local-client.sh
-echo "...fetch local client done.\n"
+base_dir=base-dir
 
-echo "TBD: read network config file..."
-peer="ec2-3-12-165-223.us-east-2.compute.amazonaws.com:8733"
+rm -rf $base_dir
+mkdir -p "$base_dir"
+mkdir -p "$base_dir/client"
+mkdir -p "$base_dir/node"
 
-echo "pre-generate keys, etc...."
-source scripts/pre-gen.sh
+prefix=https://github.com/serokell/tezos-packaging/releases/download/202004061400
+wget $prefix/tezos-client -P "$base_dir/"
+chmod +x "$base_dir"/tezos-*
+
+source scripts/generate-keys.sh
 echo $genesis_key
-echo "...pre-generation done.\n"
 
-echo "write-config..."
-scripts/write-config.sh --genesis-key $genesis_key --peer $peer
-echo "write-config...Done.\n"
+scripts/write-config.sh --genesis-key $genesis_key
 
-echo "running docker build..."
+#generated baker keys with tz TBD...
+scripts/write-params.sh
+
 docker build -t ubuntu-tezos .
-echo "...docker build done.\n"
 
-echo "creating docker volume..."
 docker volume create ubuntu-tezos-volume
-echo "....docker volume done.\n"
