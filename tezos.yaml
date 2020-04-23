@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tezos-deployment
+  labels:
+    app: tezos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tezos
+  template:
+    metadata:
+      labels:
+        app: tezos
+    spec:
+      containers:
+      - name: tezos
+        image: ubuntu-tezos
+        imagePullPolicy: Never
+        env:
+        - name:
+          value:
+
+        command: ["
+        ports:
+        - containerPort: 8732
+
+
+docker run --env-file tezos-docker.env -i -t ubuntu-tezos
