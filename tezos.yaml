@@ -5,7 +5,7 @@ metadata:
   labels:
     app: tezos
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: tezos
@@ -16,11 +16,22 @@ spec:
     spec:
       containers:
       - name: tezos
-        image: ubuntu-tezos
-        imagePullPolicy: Never
+        image: 358459329979.dkr.ecr.us-east-1.amazonaws.com/ubuntu-tezos
+        imagePullPolicy: Always
         env:
         - name: testName1
           value: testValue1
-        command: ["docker run -i -t ubuntu-tezos"]
         ports:
         - containerPort: 8732
+        - containerPort: 8733
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-rpc
+spec:
+  selector:
+    app: tezos
+  ports:
+    - protocol: TCP
+      port: 8733

@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: activate
+spec:
+  template:
+    spec:
+      containers:
+      - name: activate
+        image: 358459329979.dkr.ecr.us-east-1.amazonaws.com/ubuntu-tezos
+        command: ["/scripts/activate-protocol.sh", "--node-ip", "tezos-rpc", "--node-port", "8733", "--base-dir", "/base-dir", "--tezos-client", "/base-dir/tezos-client", "--parameters", "/parameters.json"]
+      restartPolicy: Never
+  backoffLimit: 4
