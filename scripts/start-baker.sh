@@ -188,6 +188,9 @@ node_port="$(echo "$rpc_addr" | cut -f2 -d":")"
 
 "$tezos_client" -d "$client_dir" show address baker || gen_baker_account
 [[ -f $node_dir/identity.json ]] || gen_node_identity
+
 start_baker
+
 start_endorser
+
 start_node
