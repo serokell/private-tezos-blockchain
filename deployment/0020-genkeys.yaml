@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: genkeys
+  namespace: "tqtezos"
+spec:
+  template:
+    spec:
+      containers:
+      - name: genkeys
+        image: tqtezos
+        imagePullPolicy: Never
+        command: ["/opt/tezos/bin/tezos-client", "-d", "/var/tezos/client", "--protocol", "PsCARTHAGazK", "gen", "keys", "genesis", "--force"]
+        volumeMounts:
+        - name: var-volume
+          mountPath: /var/tezos
+      restartPolicy: Never
+      volumes:
+      - name: var-volume
+        persistentVolumeClaim:
+          claimName: tezos-pv-claim
+  backoffLimit: 4
