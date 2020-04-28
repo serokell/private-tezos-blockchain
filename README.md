@@ -342,6 +342,14 @@ To stop the bakers, do the following:
 ./scripts/start-baker.sh --base-dir base-dir stop
 ./scripts/start-baker.sh --base-dir-b base-dir stop
 ```
+After running this command, the new genesis public-key will be stored in a `base-dir/genesis_key.txt` file,
+so that you can share this key with other users of your private blockchain.
+Apart from file with the new genesis public key, the `base-dir` directory will also contain
+the Tezos binaries required for running the private blockchain.
+In addition to this, the `base-dir` directory will have a `client` folder, which will contain `tezos-client`
+related files, e.g. it will contain the public key hash, public and secret keys for the `genesis` account,
+in `base-dir/client/public_key_hashs`, `base-dir/client/public_keys` and `base-dir/client/secret_keys`.
+files respectively. This hash and keys will be used later in protocol activation.
 
 To see information about the bakers, run:
 
@@ -350,6 +358,11 @@ tezos-client -d base-dir/client show address baker
 tezos-client -d base-dir-b/client show address baker
 # add -S to see secret key as well
 ```
+* Someone provided you a genesis public key. In this case, you should run the following command:
+```sh
+./scripts/fetch-binaries.sh --base-dir user --genesis-key <provided key> --base-chain carthagenet
+```
+After running this command, the `user` directory will contain the Tezos binaries.
 
 We recomend having at least two nodes and bakers in your private chain, but the more the better.
 
@@ -465,3 +478,14 @@ participants.
 
 To find this IP-address, simply run `ifconfig`, the name of ZeroTier network interface
 starts with `zt` prefix.
+
+## For Contributors
+
+Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for more information.
+
+## About Serokell
+
+This repository is maintained with ❤️ by [Serokell](https://serokell.io/).
+The names and logo for Serokell are trademark of Serokell OÜ.
+
+We love open source software! See [our other projects](https://serokell.io/community?utm_source=github) or [hire us](https://serokell.io/hire-us?utm_source=github) to design, develop and grow your idea!

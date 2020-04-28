@@ -96,6 +96,9 @@ while true; do
     esac
 done
 
+container_ip="$(hostname -i |  tr -d '[:space:]')"
+echo "Container IP: $container_ip"
+
 case "$script" in
     fetch )
         "./scripts/fetch-binaries.sh" "--base-dir" "/base-dir" \

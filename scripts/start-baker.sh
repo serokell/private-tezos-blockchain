@@ -66,9 +66,6 @@ usage() {
     echo "  [--no-background-node]. Run node in the foreground instead of background."
 }
 
-echo "start-baker -- incoming params:"
-echo $@
-
 rpc_addr="localhost:8732"
 
 if [[ $# -eq 0 || $1 == "--help" ]]; then
