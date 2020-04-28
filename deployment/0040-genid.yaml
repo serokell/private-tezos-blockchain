@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: genid
+  namespace: tqtezos
+spec:
+  template:
+    spec:
+      containers:
+      - name: genid
+        image: tqtezos
+        imagePullPolicy: Never
+        command: ["/opt/tezos/bin/tezos-node", "identity", "generate", "--data-dir", "/var/tezos/node", "--config-file", "/etc/tezos/nodeconfig.json"]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/tezos
+        - name: var-volume
+          mountPath: /var/tezos
+      restartPolicy: Never
+      volumes:
+      - name: config-volume
+        configMap:
+          name: tezos-config
+      - name: var-volume
+        persistentVolumeClaim:
+          claimName: tezos-pv-claim
+  backoffLimit: 4
