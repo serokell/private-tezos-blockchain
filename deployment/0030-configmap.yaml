@@ -8,11 +8,7 @@ data:
     {
       "bootstrap_accounts": [
         [
-          "edpkubXzL1rs3dQAGEdTyevfxLw3pBCTF53CdWKdJJYiBFwC1xZSct",
-          "4000000000000"
-        ],
-        [
-          "edpkvUS1z9QGXr6f89dNF5WyeRCFuK6PYWYrMHcpU9kQ2TevD66fDG",
+          "edpkuwBYLUNKA18tdcnByxbxcfzKd5ddXiWe2TyhHoKHF6juHgdie8",
           "4000000000000"
         ],
         [
@@ -67,11 +63,11 @@ data:
         "genesis": {
           "timestamp": "2019-11-21T17:43:32Z",
           "block": "BLockGenesisGenesisGenesisGenesisGenesisd1f7bcGMoXy",
-          "protocol": "PtBMwNZT94N7gXKw4i273CKcSaBrrBnqnt3RATExNKr9KNX2USV"
+          "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex"
         },
         "genesis_parameters": {
           "values": {
-            "genesis_pubkey": "edpkuRBhj4R8YfdnaZAP51BxaLayYL2HoqWv1RyuY6CigD75YKWYeU"
+            "genesis_pubkey": "edpktrQRy6X3VFv8gzALhKzapRcx3aTvH3vXuzFq8qPTJ8KDQ23fPe"
             }
         },
         "chain_name": "457a4d8a-aa4a-417b-a1a8-b8a7bd324666",

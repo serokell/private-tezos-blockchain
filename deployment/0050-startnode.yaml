@@ -1,41 +1,41 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-rpc
+  name: tezos-node
   namespace: "tqtezos"
 spec:
   ports:
-  - port: 8732
+  - port: 8733
   selector:
-    app: tezos-rpc
+    app: tezos-node
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tezos-rpc
+  name: tezos-node
   namespace: "tqtezos"
 spec:
   selector:
     matchLabels:
-      app: tezos-rpc
+      app: tezos-node
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: tezos-rpc
+        app: tezos-node
     spec:
       containers:
       - image: tqtezos
         imagePullPolicy: Never
-        name: tezos-rpc
+        name: tezos-node
         command: ["/bin/sh", "-c"]
-        args: ["/opt/tezos/bin/tezos-node run --data-dir /var/tezos/node --rpc-addr localhost:8732 --net-addr localhost:8733 --no-bootstrap-peers --bootstrap-threshold 1"]
+        args: ["/opt/tezos/bin/tezos-node run --config-file /etc/tezos/nodeconfig.json"]
         ports:
         - containerPort: 8732
-          name: tezos-rpc
-          containerPort: 8733
           name: tezos-net
+          containerPort: 8733
+          name: tezos-rpc
         volumeMounts:
         - name: config-volume
           mountPath: /etc/tezos
