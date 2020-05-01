@@ -11,7 +11,7 @@ spec:
         image: tqtezos
         imagePullPolicy: Never
         command: ["/bin/sh", "-c"]
-        args: ["/opt/tezos/bin/tezos-client -A tezos-rpc -P 8732 -d /var/tezos/client -l --block genesis activate protocol PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb with fitness 25 and key genesis and parameters "$parameters && /opt/tezos/bin/tezos-client -A tezos-rpc -P 8732 -d /var/tezos/client -l bake for baker --minimal-timestamp"]
+        args: ["/opt/tezos/bin/tezos-client", "-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "-l", "--block", "genesis", "activate", "protocol", "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb", "with", "fitness", "25", "and", "key", "genesis", "and", "parameters", "$parameters", "&&", "/opt/tezos/bin/tezos-client", "-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "-l", "bake", "for", "baker", "--minimal-timestamp"]
         volumeMounts:
         - name: var-volume
           mountPath: /var/tezos
