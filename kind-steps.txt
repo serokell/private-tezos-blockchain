@@ -1,0 +1,44 @@
+-- if starting over from previous run...
+kind delete cluster
+docker system prune --volumes
+
+alias getpod="kubectl -n tqtezos get pod"
+alias descpod="kubectl -n tqtezos describe pod"
+alias getjob="kubectl -n tqtezos get jobs"
+
+kind create cluster --config=kind-config.yaml
+
+docker build -t tqtezos .
+
+kind load docker-image tqtezos
+
+kubectl apply -f deployment/0000-namespace.yaml
+kubectl apply -f deployment/0010-pv.yaml
+-- kubectl get pv
+-- kubectl -n tqtezos get pvc
+
+kubectl apply -f deployment/0020-genkeys.yaml
+-- kubectl -n tqtezos get pod
+-- kubectl -n tqtezos logs genkeys-blahblah
+-- kubectl describe pod -n tqtezos
+
+-- Copy the generated key into the JSON file used by protocol activation
+-- perhaps:
+-- cat ~/.tezos/client/public_keys |jq '.[0] | select(.name=="genesis").value'|sed s/\"//g|cut -f 2 -d :
+
+kubectl apply -f deployment/0030-configmap.yaml
+
+-- make sure ~/.tezos/node dirs exist and are empty
+-- rm -rf ~/.tezos/node
+-- mkdir ~/.tezos/node
+
+kubectl apply -f deployment/0040-genid.yaml
+
+-- kubectl -n tqtezos get pod
+-- kubectl -n tqtezos logs genid-blahblah
+
+kubectl apply -f deployment/0050-startnode.yaml
+-- kubectl -n tqtezos get pod
+-- kubectl -n tqtezos logs tezos-rpc-blahblah
+
+kubectl apply -f deployment/0060-activate.yaml
