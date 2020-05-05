@@ -6,6 +6,8 @@ alias getpod="kubectl -n tqtezos get pod"
 alias descpod="kubectl -n tqtezos describe pod"
 alias getjob="kubectl -n tqtezos get jobs"
 
+-- make sure the directories ~/.tezos/client and ~/.tezos/node exist
+
 -- before this, edit kind-config.yaml to contain your home directory name
 kind create cluster --config=kind-config.yaml
 
@@ -23,9 +25,13 @@ kubectl apply -f deployment/0020-genkeys.yaml
 -- kubectl -n tqtezos logs genkeys-blahblah
 -- kubectl describe pod -n tqtezos
 
--- Copy the generated key into the nodeconfig.json section of deployment/0030-configmap.yaml
+-- Edit deployment/0030-configmap.yaml:
+-- Paste the generated baker0 key into the parameters.json section of the file - replace the first
+-- entry under bootstrap_accounts
+-- Paste the generated genesis key into the nodeconfig.json section of the file - under
+-- genesis_pubkey
 
--- perhaps:
+-- (This gets the genesis key if using the bash shell)
 -- cat ~/.tezos/client/public_keys |jq '.[0] | select(.name=="genesis").value'|sed s/\"//g|cut -f 2 -d :
 
 kubectl apply -f deployment/0030-configmap.yaml

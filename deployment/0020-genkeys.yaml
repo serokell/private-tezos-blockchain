@@ -7,10 +7,17 @@ spec:
   template:
     spec:
       containers:
-      - name: genkeys
+      - name: genesis-key
         image: tqtezos
         imagePullPolicy: Never
         command: ["/opt/tezos/bin/tezos-client", "-d", "/var/tezos/client", "--protocol", "PsCARTHAGazK", "gen", "keys", "genesis", "--force"]
+        volumeMounts:
+        - name: var-volume
+          mountPath: /var/tezos
+      - name: baker0-key
+        image: tqtezos
+        imagePullPolicy: Never
+        command: ["/opt/tezos/bin/tezos-client", "-d", "/var/tezos/client", "--protocol", "PsCARTHAGazK", "gen", "keys", "baker0"]
         volumeMounts:
         - name: var-volume
           mountPath: /var/tezos
