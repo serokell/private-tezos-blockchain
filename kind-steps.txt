@@ -45,6 +45,8 @@ kubectl apply -f deployment/0040-genid.yaml
 -- kubectl -n tqtezos get pod
 -- kubectl -n tqtezos logs genid-blahblah
 
+-- wait until genid has completed running before continuing
+
 kubectl apply -f deployment/0050-startnode.yaml
 -- kubectl -n tqtezos get pod
 -- kubectl -n tqtezos logs tezos-rpc-blahblah
