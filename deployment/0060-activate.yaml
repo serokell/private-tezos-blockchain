@@ -9,7 +9,7 @@ spec:
       containers:
       - name: activate
         image: registry.gitlab.com/tezos/flextesa:d33f98de-run
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         command: ["/bin/sh", "-c"]
         args: ["tezos-client -A tezos-node -P 8733 -d /var/tezos/client -l --block genesis activate protocol PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb with fitness 25 and key genesis and parameters /etc/tezos/parameters.json && tezos-client -A tezos-node -P 8733 -d /var/tezos/client -l bake for baker0 --minimal-timestamp"]
         volumeMounts:

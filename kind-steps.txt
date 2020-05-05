@@ -6,6 +6,7 @@ alias getpod="kubectl -n tqtezos get pod"
 alias descpod="kubectl -n tqtezos describe pod"
 alias getjob="kubectl -n tqtezos get jobs"
 
+-- before this, edit kind-config.yaml to contain your home directory name
 kind create cluster --config=kind-config.yaml
 
 docker build -t tqtezos .
@@ -22,7 +23,8 @@ kubectl apply -f deployment/0020-genkeys.yaml
 -- kubectl -n tqtezos logs genkeys-blahblah
 -- kubectl describe pod -n tqtezos
 
--- Copy the generated key into the JSON file used by protocol activation
+-- Copy the generated key into the nodeconfig.json section of deployment/0030-configmap.yaml
+
 -- perhaps:
 -- cat ~/.tezos/client/public_keys |jq '.[0] | select(.name=="genesis").value'|sed s/\"//g|cut -f 2 -d :
 
