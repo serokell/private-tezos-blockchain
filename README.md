@@ -4,6 +4,8 @@
    - SPDX-License-Identifier: MPL-2.0
    -->
 
+WARNING: THIS REPOSITORY IS ARCHIVED AND NO LONGER MAINTAINED
+
 # Running a private blockchain
 
 This doc will describe how to run your own private Tezos blockchain.
